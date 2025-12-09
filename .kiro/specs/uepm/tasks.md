@@ -25,7 +25,7 @@
   - **Property 2: Init command is idempotent**
   - **Validates: Requirements 1.4**
 
-- [ ] 3. Implement package.json management
+- [x] 3. Implement package.json management
   - Create TypeScript interfaces for PackageJson structure
   - Implement exists function to check for package.json
   - Implement create function to generate new package.json with UEPM config
@@ -34,11 +34,11 @@
   - Implement function to add/update postinstall script
   - _Requirements: 1.5, 1.6, 9.2_
 
-- [ ] 3.1 Write property test for package.json creation
+- [x] 3.1 Write property test for package.json creation
   - **Property 8: Init command creates package.json when missing**
   - **Validates: Requirements 1.5**
 
-- [ ] 3.2 Write property test for package.json updates
+- [x] 3.2 Write property test for package.json updates
   - **Property 9: Init command updates existing package.json**
   - **Validates: Requirements 1.6**
 
