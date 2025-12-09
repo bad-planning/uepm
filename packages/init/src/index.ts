@@ -8,6 +8,10 @@ import {
 } from '@uepm/core';
 import * as packageJsonManager from '@uepm/core';
 
+// Export command-related classes
+export { CommandRegistry, Command } from './command-registry';
+export { InitCommand } from './init-command';
+
 export interface InitOptions {
   projectDir?: string;
   force?: boolean;

@@ -59,7 +59,7 @@
   - Test handling of already-initialized projects
   - _Requirements: 1.1, 1.3, 1.4_
 
-- [ ] 5. Implement CLI framework and command registry
+- [x] 5. Implement CLI framework and command registry
   - Create CommandRegistry class for managing commands
   - Implement command registration and lookup
   - Create main CLI entry point using Commander.js
@@ -68,7 +68,7 @@
   - Configure bin entry in package.json
   - _Requirements: 6.1, 6.2, 6.3, 6.5_
 
-- [ ] 5.1 Write unit tests for CLI framework
+- [x] 5.1 Write unit tests for CLI framework
   - Test command registration
   - Test help output
   - Test invalid command handling
