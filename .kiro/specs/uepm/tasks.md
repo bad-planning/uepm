@@ -17,7 +17,7 @@
   - Implement hasPluginDirectory function to check for existing entries
   - _Requirements: 1.1, 1.2, 1.4_
 
-- [ ] 2.1 Write property test for uproject modification
+- [x] 2.1 Write property test for uproject modification
   - **Property 1: Init command adds node_modules while preserving existing data**
   - **Validates: Requirements 1.1, 1.2**
 
