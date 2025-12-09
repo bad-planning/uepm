@@ -95,4 +95,39 @@ describe('UProject Manager - Property-Based Tests', () => {
       { numRuns: 100 }
     );
   });
+
+  /**
+   * Feature: uepm, Property 2: Init command is idempotent
+   * Validates: Requirements 1.4
+   * 
+   * For any uproject file, running the init command multiple times
+   * should produce the same result as running it once - specifically,
+   * "node_modules" should appear exactly once in AdditionalPluginDirectories.
+   */
+  it('Property 2: init command is idempotent', () => {
+    fc.assert(
+      fc.property(uprojectArbitrary(), (originalProject) => {
+        // Apply addPluginDirectory once
+        const modifiedOnce = addPluginDirectory(originalProject, 'node_modules');
+        
+        // Apply addPluginDirectory a second time
+        const modifiedTwice = addPluginDirectory(modifiedOnce, 'node_modules');
+        
+        // Apply addPluginDirectory a third time
+        const modifiedThrice = addPluginDirectory(modifiedTwice, 'node_modules');
+        
+        // All results should be identical
+        expect(modifiedTwice).toEqual(modifiedOnce);
+        expect(modifiedThrice).toEqual(modifiedOnce);
+        
+        // Verify node_modules appears exactly once
+        const nodeModulesCount = modifiedThrice.AdditionalPluginDirectories?.filter(
+          dir => dir === 'node_modules'
+        ).length ?? 0;
+        
+        expect(nodeModulesCount).toBe(1);
+      }),
+      { numRuns: 100 }
+    );
+  });
 });

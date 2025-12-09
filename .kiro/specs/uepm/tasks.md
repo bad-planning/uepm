@@ -21,7 +21,7 @@
   - **Property 1: Init command adds node_modules while preserving existing data**
   - **Validates: Requirements 1.1, 1.2**
 
-- [ ] 2.2 Write property test for idempotence
+- [x] 2.2 Write property test for idempotence
   - **Property 2: Init command is idempotent**
   - **Validates: Requirements 1.4**
 
