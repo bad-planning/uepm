@@ -1,0 +1,24 @@
+{
+  "name": "@uepm/example-plugin",
+  "version": "1.0.0",
+  "description": "Example Unreal Engine plugin distributed via NPM",
+  "main": "ExamplePlugin.uplugin",
+  "unreal": {
+    "engineVersion": ">=5.0.0 <6.0.0",
+    "pluginName": "ExamplePlugin"
+  },
+  "files": [
+    "ExamplePlugin.uplugin",
+    "Source/**/*",
+    "Resources/**/*",
+    "Content/**/*"
+  ],
+  "keywords": [
+    "unreal",
+    "unreal-engine",
+    "plugin",
+    "uepm"
+  ],
+  "author": "",
+  "license": "MIT"
+}

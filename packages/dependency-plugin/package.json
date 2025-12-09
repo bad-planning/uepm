@@ -1,0 +1,25 @@
+{
+  "name": "@uepm/dependency-plugin",
+  "version": "1.0.0",
+  "description": "Plugin demonstrating dependencies on other NPM plugins",
+  "main": "DependencyPlugin.uplugin",
+  "unreal": {
+    "engineVersion": ">=5.0.0 <6.0.0",
+    "pluginName": "DependencyPlugin"
+  },
+  "dependencies": {
+    "@uepm/example-plugin": "^1.0.0"
+  },
+  "files": [
+    "DependencyPlugin.uplugin",
+    "Source/**/*"
+  ],
+  "keywords": [
+    "unreal",
+    "unreal-engine",
+    "plugin",
+    "uepm"
+  ],
+  "author": "",
+  "license": "MIT"
+}
