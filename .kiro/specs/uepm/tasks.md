@@ -74,7 +74,7 @@
   - Test invalid command handling
   - _Requirements: 6.2, 6.3_
 
-- [ ] 6. Implement validation hook core logic
+- [x] 6. Implement validation hook core logic
   - Create validation hook entry point script
   - Implement getEngineVersion function to extract version from .uproject
   - Implement findInstalledPlugins function to discover plugins in node_modules
@@ -82,15 +82,15 @@
   - Implement warning message formatting for incompatible plugins
   - _Requirements: 9.2, 9.3, 9.4, 9.5_
 
-- [ ] 6.1 Write property test for engine version parsing
+- [x] 6.1 Write property test for engine version parsing
   - **Property 3: Validation hook correctly parses engine versions**
   - **Validates: Requirements 9.3**
 
-- [ ] 6.2 Write property test for semver validation
+- [x] 6.2 Write property test for semver validation
   - **Property 4: Semver validation correctly identifies compatibility**
   - **Validates: Requirements 9.4**
 
-- [ ] 6.3 Write unit tests for validation hook
+- [x] 6.3 Write unit tests for validation hook
   - Test with compatible plugin example
   - Test with incompatible plugin example
   - Test warning message format
