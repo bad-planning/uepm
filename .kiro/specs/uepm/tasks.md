@@ -42,7 +42,7 @@
   - **Property 9: Init command updates existing package.json**
   - **Validates: Requirements 1.6**
 
-- [ ] 4. Implement init command
+- [x] 4. Implement init command
   - Create InitCommand class implementing CLICommand interface
   - Implement command execution logic to find .uproject file
   - Add logic to modify .uproject with node_modules directory
@@ -52,7 +52,7 @@
   - Handle edge cases (no .uproject, multiple .uproject files, already initialized)
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 7.1, 7.2, 7.3_
 
-- [ ] 4.1 Write unit tests for init command
+- [x] 4.1 Write unit tests for init command
   - Test successful initialization with existing package.json
   - Test successful initialization without package.json
   - Test error handling for missing .uproject
