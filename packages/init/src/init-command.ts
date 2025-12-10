@@ -1,5 +1,6 @@
 import { Command } from './command-registry';
 import { init, InitOptions } from './index';
+import { UEPMError, formatErrorMessage } from '@uepm/core';
 
 /**
  * Init command implementation
@@ -19,6 +20,14 @@ export class InitCommand implements Command {
       console.log(result.message);
       return result.success ? 0 : 1;
     } catch (error) {
+      // Handle UEPMError with proper formatting and exit codes
+      if (error instanceof UEPMError) {
+        const formatted = formatErrorMessage(error.toErrorMessage());
+        console.error(formatted);
+        return error.exitCode;
+      }
+      
+      // Handle other errors
       const message = error instanceof Error ? error.message : String(error);
       console.error(`Error: ${message}`);
       return 1;

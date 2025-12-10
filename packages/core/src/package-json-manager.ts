@@ -1,6 +1,13 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { PackageJson } from './types';
+import {
+  createFileNotFoundError,
+  createPermissionDeniedError,
+  createJSONParseError,
+  createSchemaValidationError,
+} from './errors';
+import { validatePackageJsonSchema } from './validation';
 
 /**
  * Check if package.json exists in the specified directory
@@ -46,24 +53,45 @@ export async function create(
  * Read and parse an existing package.json
  * @param directory - Directory containing package.json
  * @returns Parsed PackageJson object
- * @throws Error if file cannot be read or parsed
+ * @throws UEPMError if file cannot be read or parsed
  */
 export async function read(directory: string): Promise<PackageJson> {
+  const packagePath = path.join(directory, 'package.json');
+  
   try {
-    const packagePath = path.join(directory, 'package.json');
     const content = await fs.readFile(packagePath, 'utf-8');
-    const packageJson = JSON.parse(content) as PackageJson;
     
-    // Validate that it has the required name field
-    if (!packageJson.name) {
-      throw new Error('Invalid package.json: missing name field');
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(content);
+    } catch (parseError) {
+      throw createJSONParseError(packagePath, parseError as Error);
     }
     
-    return packageJson;
+    // Validate schema
+    const validation = validatePackageJsonSchema(parsed);
+    if (!validation.valid) {
+      throw createSchemaValidationError(packagePath, validation.missingFields);
+    }
+    
+    return parsed as PackageJson;
   } catch (error) {
-    if (error instanceof SyntaxError) {
-      throw new Error(`Failed to parse package.json: ${error.message}`);
+    // If it's already a UEPMError, rethrow it
+    if (error instanceof Error && error.name === 'UEPMError') {
+      throw error;
     }
+    
+    // Handle file system errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      const fsError = error as NodeJS.ErrnoException;
+      if (fsError.code === 'ENOENT') {
+        throw createFileNotFoundError(packagePath);
+      }
+      if (fsError.code === 'EACCES' || fsError.code === 'EPERM') {
+        throw createPermissionDeniedError(packagePath, 'read');
+      }
+    }
+    
     throw error;
   }
 }
@@ -72,15 +100,35 @@ export async function read(directory: string): Promise<PackageJson> {
  * Write package.json to the specified directory
  * @param directory - Directory where package.json should be written
  * @param packageJson - PackageJson object to write
+ * @throws UEPMError if file cannot be written
  */
 export async function write(
   directory: string,
   packageJson: PackageJson
 ): Promise<void> {
   const packagePath = path.join(directory, 'package.json');
-  // Use 2-space indentation with trailing newline
-  const content = JSON.stringify(packageJson, null, 2) + '\n';
-  await fs.writeFile(packagePath, content, 'utf-8');
+  
+  try {
+    // Use 2-space indentation with trailing newline
+    const content = JSON.stringify(packageJson, null, 2) + '\n';
+    await fs.writeFile(packagePath, content, 'utf-8');
+  } catch (error) {
+    // Handle file system errors
+    if (error && typeof error === 'object' && 'code' in error) {
+      const fsError = error as NodeJS.ErrnoException;
+      if (fsError.code === 'EACCES' || fsError.code === 'EPERM') {
+        throw createPermissionDeniedError(packagePath, 'write');
+      }
+      if (fsError.code === 'ENOENT') {
+        throw createFileNotFoundError(
+          directory,
+          'Please check that the directory exists.'
+        );
+      }
+    }
+    
+    throw error;
+  }
 }
 
 /**

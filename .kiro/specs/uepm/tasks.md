@@ -96,7 +96,7 @@
   - Test warning message format
   - _Requirements: 9.5_
 
-- [ ] 7. Implement error handling and validation
+- [x] 7. Implement error handling and validation
   - Create ErrorMessage interface and formatting utilities
   - Implement JSON parsing error handling with descriptive messages
   - Implement file system error handling (permissions, not found)
@@ -105,11 +105,11 @@
   - Handle multiple .uproject files with deterministic selection
   - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 7.1 Write property test for error exit codes
+- [x] 7.1 Write property test for error exit codes
   - **Property 5: Error conditions produce non-zero exit codes**
   - **Validates: Requirements 7.4**
 
-- [ ] 7.2 Write property test for uproject validation
+- [x] 7.2 Write property test for uproject validation
   - **Property 6: UProject validation accepts valid schemas**
   - **Validates: Requirements 7.5**
 

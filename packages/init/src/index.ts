@@ -5,6 +5,7 @@ import {
   writeProject,
   addPluginDirectory,
   hasPluginDirectory,
+  UEPMError,
 } from '@uepm/core';
 import * as packageJsonManager from '@uepm/core';
 
@@ -33,27 +34,10 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
 
   try {
     // Step 1: Find the .uproject file
-    let uprojectPath: string;
-    try {
-      uprojectPath = await findProjectFile(projectDir);
-    } catch (error) {
-      return {
-        success: false,
-        message: `Error: No .uproject file found in directory: ${projectDir}\nPlease run this command in your Unreal Engine project root directory.`,
-      };
-    }
+    const uprojectPath = await findProjectFile(projectDir);
 
     // Step 2: Read and modify the .uproject file
-    let project;
-    try {
-      project = await readProject(uprojectPath);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return {
-        success: false,
-        message: `Error reading .uproject file: ${message}`,
-      };
-    }
+    const project = await readProject(uprojectPath);
 
     // Check if already initialized (unless force flag is set)
     const alreadyHasNodeModules = hasPluginDirectory(project, 'node_modules');
@@ -67,16 +51,7 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
 
     // Add node_modules to AdditionalPluginDirectories
     const modifiedProject = addPluginDirectory(project, 'node_modules');
-
-    try {
-      await writeProject(uprojectPath, modifiedProject);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return {
-        success: false,
-        message: `Error writing .uproject file: ${message}\nPlease check file permissions.`,
-      };
-    }
+    await writeProject(uprojectPath, modifiedProject);
 
     // Step 3: Create or update package.json
     const packageJsonExists = await packageJsonManager.exists(projectDir);
@@ -84,34 +59,18 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
 
     if (!packageJsonExists) {
       // Create new package.json
-      try {
-        await packageJsonManager.create(projectDir, projectName);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return {
-          success: false,
-          message: `Error creating package.json: ${message}`,
-        };
-      }
+      await packageJsonManager.create(projectDir, projectName);
     } else {
       // Update existing package.json
-      try {
-        let packageJson = await packageJsonManager.read(projectDir);
-        
-        // Add postinstall script
-        packageJson = packageJsonManager.addPostinstallScript(packageJson);
-        
-        // Ensure @uepm/validate is in devDependencies
-        packageJson = packageJsonManager.ensureValidateDependency(packageJson);
-        
-        await packageJsonManager.write(projectDir, packageJson);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        return {
-          success: false,
-          message: `Error updating package.json: ${message}`,
-        };
-      }
+      let packageJson = await packageJsonManager.read(projectDir);
+      
+      // Add postinstall script
+      packageJson = packageJsonManager.addPostinstallScript(packageJson);
+      
+      // Ensure @uepm/validate is in devDependencies
+      packageJson = packageJsonManager.ensureValidateDependency(packageJson);
+      
+      await packageJsonManager.write(projectDir, packageJson);
     }
 
     // Success!
@@ -121,6 +80,15 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
       message: `Successfully ${actionTaken} project for NPM plugin support!\n\nNext steps:\n1. Run 'npm install' to install dependencies\n2. Install Unreal Engine plugins via NPM (e.g., 'npm install @uepm/example-plugin')\n3. Open your project in Unreal Engine`,
     };
   } catch (error) {
+    // Handle UEPMErrors by converting to error result
+    if (error instanceof UEPMError) {
+      return {
+        success: false,
+        message: error.message + (error.suggestion ? `\n${error.suggestion}` : ''),
+      };
+    }
+    
+    // For other errors, wrap them in a generic error response
     const message = error instanceof Error ? error.message : String(error);
     return {
       success: false,
