@@ -113,7 +113,7 @@
   - **Property 6: UProject validation accepts valid schemas**
   - **Validates: Requirements 7.5**
 
-- [ ] 8. Checkpoint - Ensure all tests pass
+- [x] 8. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 9. Create example plugin package
