@@ -4,16 +4,15 @@
   "private": true,
   "description": "Sample Unreal Engine project demonstrating UEPM plugin system",
   "scripts": {
-    "postinstall": "patch-package",
-    "test": "vitest --run",
-    "test:watch": "vitest"
+    "postinstall": "patch-package && uepm-validate"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@uepm/example-plugin": "file:../plugins/example-plugin",
+    "@uepm/dependency-plugin": "file:../plugins/dependency-plugin"
+  },
   "devDependencies": {
-    "patch-package": "^8.0.0",
-    "vitest": "^1.0.0",
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0"
+    "@uepm/validate": "file:../../packages/validate",
+    "patch-package": "^8.0.0"
   },
   "keywords": ["unreal", "unreal-engine", "uepm", "sample"],
   "license": "MIT"

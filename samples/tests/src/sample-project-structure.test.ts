@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFile, access } from 'fs/promises';
 import { join } from 'path';
 
-const SAMPLE_PROJECT_DIR = __dirname + '/..';
+const SAMPLE_PROJECT_DIR = join(__dirname, '../../project');
 
 describe('Sample Project Structure', () => {
   describe('UProject File', () => {
@@ -32,6 +32,10 @@ describe('Sample Project Structure', () => {
       expect(uproject.TargetPlatforms).toContain('Win64');
       expect(uproject.TargetPlatforms).toContain('Mac');
       expect(uproject.TargetPlatforms).toContain('Linux');
+      
+      // Verify UEPM configuration
+      expect(uproject).toHaveProperty('AdditionalPluginDirectories');
+      expect(uproject.AdditionalPluginDirectories).toContain('node_modules');
     });
 
     it('should have a SampleProject module defined', async () => {
@@ -64,14 +68,16 @@ describe('Sample Project Structure', () => {
       expect(packageJson.description).toContain('UEPM');
     });
 
-    it('should have dependencies structure ready for example plugins', async () => {
+    it('should have correct example plugin dependencies', async () => {
       const packageJsonPath = join(SAMPLE_PROJECT_DIR, 'package.json');
       const content = await readFile(packageJsonPath, 'utf-8');
       const packageJson = JSON.parse(content);
       
-      // Verify dependencies object exists (ready for plugin dependencies)
-      expect(packageJson).toHaveProperty('dependencies');
-      expect(typeof packageJson.dependencies).toBe('object');
+      // Verify example plugin dependencies
+      expect(packageJson.dependencies).toHaveProperty('@uepm/example-plugin');
+      expect(packageJson.dependencies).toHaveProperty('@uepm/dependency-plugin');
+      expect(packageJson.dependencies['@uepm/example-plugin']).toBe('file:../plugins/example-plugin');
+      expect(packageJson.dependencies['@uepm/dependency-plugin']).toBe('file:../plugins/dependency-plugin');
     });
 
     it('should have correct dev dependencies', async () => {
@@ -80,13 +86,10 @@ describe('Sample Project Structure', () => {
       const packageJson = JSON.parse(content);
       
       // Verify dev dependencies
+      expect(packageJson.devDependencies).toHaveProperty('@uepm/validate');
       expect(packageJson.devDependencies).toHaveProperty('patch-package');
+      expect(packageJson.devDependencies['@uepm/validate']).toBe('file:../../packages/validate');
       expect(packageJson.devDependencies['patch-package']).toBe('^8.0.0');
-      
-      // Verify testing dependencies
-      expect(packageJson.devDependencies).toHaveProperty('vitest');
-      expect(packageJson.devDependencies).toHaveProperty('@types/node');
-      expect(packageJson.devDependencies).toHaveProperty('typescript');
     });
 
     it('should have correct postinstall script', async () => {
@@ -94,13 +97,9 @@ describe('Sample Project Structure', () => {
       const content = await readFile(packageJsonPath, 'utf-8');
       const packageJson = JSON.parse(content);
       
-      // Verify postinstall script (ready for validation hook)
+      // Verify postinstall script
       expect(packageJson.scripts).toHaveProperty('postinstall');
-      expect(packageJson.scripts.postinstall).toBe('patch-package');
-      
-      // Verify test scripts
-      expect(packageJson.scripts).toHaveProperty('test');
-      expect(packageJson.scripts.test).toBe('vitest --run');
+      expect(packageJson.scripts.postinstall).toBe('patch-package && uepm-validate');
     });
 
     it('should have appropriate metadata', async () => {
@@ -142,6 +141,53 @@ describe('Sample Project Structure', () => {
       // Verify game name redirects for SampleProject
       expect(content).toContain('NewGameName="/Script/SampleProject"');
       expect(content).toContain('NewClassName="SampleProjectGameModeBase"');
+    });
+  });
+
+  describe('Source Code Structure', () => {
+    it('should have proper Unreal Engine source structure', async () => {
+      const sourceDir = join(SAMPLE_PROJECT_DIR, 'Source');
+      
+      // Verify Source directory exists
+      await expect(access(sourceDir)).resolves.not.toThrow();
+      
+      // Verify target files exist
+      await expect(access(join(sourceDir, 'SampleProject.Target.cs'))).resolves.not.toThrow();
+      await expect(access(join(sourceDir, 'SampleProjectEditor.Target.cs'))).resolves.not.toThrow();
+      
+      // Verify module directory exists
+      const moduleDir = join(sourceDir, 'SampleProject');
+      await expect(access(moduleDir)).resolves.not.toThrow();
+      
+      // Verify module files exist
+      await expect(access(join(moduleDir, 'SampleProject.Build.cs'))).resolves.not.toThrow();
+      await expect(access(join(moduleDir, 'SampleProject.cpp'))).resolves.not.toThrow();
+      await expect(access(join(moduleDir, 'SampleProject.h'))).resolves.not.toThrow();
+      await expect(access(join(moduleDir, 'SampleProjectGameModeBase.h'))).resolves.not.toThrow();
+      await expect(access(join(moduleDir, 'SampleProjectGameModeBase.cpp'))).resolves.not.toThrow();
+    });
+
+    it('should have valid build configuration', async () => {
+      const buildFile = join(SAMPLE_PROJECT_DIR, 'Source', 'SampleProject', 'SampleProject.Build.cs');
+      const content = await readFile(buildFile, 'utf-8');
+      
+      // Verify it's a proper Unreal build file
+      expect(content).toContain('ModuleRules');
+      expect(content).toContain('PublicDependencyModuleNames');
+      expect(content).toContain('Core');
+      expect(content).toContain('CoreUObject');
+      expect(content).toContain('Engine');
+    });
+
+    it('should have GameMode that demonstrates plugin integration', async () => {
+      const gameModeFile = join(SAMPLE_PROJECT_DIR, 'Source', 'SampleProject', 'SampleProjectGameModeBase.cpp');
+      const content = await readFile(gameModeFile, 'utf-8');
+      
+      // Verify it contains plugin integration code
+      expect(content).toContain('TestPluginIntegration');
+      expect(content).toContain('UEPM plugin integration');
+      expect(content).toContain('ExamplePlugin');
+      expect(content).toContain('DependencyPlugin');
     });
   });
 

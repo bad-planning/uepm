@@ -32,10 +32,12 @@ npm install
 ```
 
 This will:
-- Download the `@uepm/example-plugin` and `@uepm/dependency-plugin` packages
-- Place them in `node_modules/@uepm/`
+- Link the `@uepm/example-plugin` and `@uepm/dependency-plugin` packages from the monorepo
+- Make them available in the workspace's shared `node_modules/@uepm/` directory
 - Run the postinstall hook to validate engine compatibility
 - Apply any existing patches via `patch-package`
+
+**Note**: In this monorepo setup, plugins are available at the workspace root level (`../../node_modules/@uepm/`) rather than in the project's local `node_modules`. This is normal NPM workspace behavior and Unreal Engine will find them correctly.
 
 ### 3. Open the Project in Unreal Engine
 
@@ -50,7 +52,16 @@ To verify that the plugins are loaded correctly:
 1. In Unreal Engine, go to **Edit > Plugins**
 2. Look for "ExamplePlugin" and "DependencyPlugin" in the plugin list
 3. Both should be enabled and show as "Installed"
-4. Check the Output Log for any plugin loading messages
+4. Check the Output Log for plugin loading messages
+5. When you play the game, you should see a green message on screen: "SampleProject loaded! Check Output Log for UEPM plugin messages."
+
+### 5. Explore the Source Code
+
+The sample project includes C++ source code that demonstrates plugin integration:
+
+- **`Source/SampleProject/SampleProjectGameModeBase.cpp`**: Contains `TestPluginIntegration()` method that logs plugin status
+- **`Source/SampleProject/`**: Complete Unreal Engine module structure with build files
+- **Target files**: Proper game and editor target configurations
 
 ## Plugin Management
 
@@ -109,11 +120,20 @@ npx uepm-validate
 
 ```
 sample-project/
-├── SampleProject.uproject     # Main project file (modified by UEPM init)
+├── SampleProject.uproject     # Main project file (configured for UEPM)
 ├── package.json              # NPM dependencies and scripts
+├── Source/                   # Unreal Engine C++ source code
+│   ├── SampleProject.Target.cs
+│   ├── SampleProjectEditor.Target.cs
+│   └── SampleProject/
+│       ├── SampleProject.Build.cs
+│       ├── SampleProject.cpp
+│       ├── SampleProject.h
+│       ├── SampleProjectGameModeBase.h
+│       └── SampleProjectGameModeBase.cpp
 ├── Config/
 │   └── DefaultEngine.ini     # Engine configuration
-├── node_modules/             # NPM-installed plugins
+├── ../../node_modules/       # NPM-installed plugins (workspace level)
 │   └── @uepm/
 │       ├── example-plugin/   # Basic example plugin
 │       └── dependency-plugin/ # Plugin with dependencies

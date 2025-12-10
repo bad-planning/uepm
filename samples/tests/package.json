@@ -1,0 +1,17 @@
+{
+  "name": "uepm-samples-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tests for UEPM sample projects and plugins",
+  "scripts": {
+    "test": "vitest --run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^1.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": ["unreal", "unreal-engine", "uepm", "tests"],
+  "license": "MIT"
+}

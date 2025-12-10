@@ -11,6 +11,9 @@
     }
   ],
   "Plugins": [],
+  "AdditionalPluginDirectories": [
+    "node_modules"
+  ],
   "TargetPlatforms": [
     "Win64",
     "Mac",

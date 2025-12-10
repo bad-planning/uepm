@@ -9,11 +9,16 @@ samples/
 ├── plugins/                    # Sample plugins demonstrating NPM distribution
 │   ├── example-plugin/         # Basic plugin example
 │   └── dependency-plugin/      # Plugin with dependencies example
-└── project/                    # Sample Unreal Engine project
-    ├── SampleProject.uproject  # Unreal project file
-    ├── package.json           # NPM dependencies and scripts
-    ├── Config/                # Unreal Engine configuration
-    └── README.md              # Detailed setup instructions
+├── project/                    # Sample Unreal Engine project
+│   ├── SampleProject.uproject  # Unreal project file
+│   ├── package.json           # NPM dependencies and scripts
+│   ├── Source/                # C++ source code demonstrating plugin usage
+│   ├── Config/                # Unreal Engine configuration
+│   └── README.md              # Detailed setup instructions
+└── tests/                      # Test suite for validating sample structure
+    ├── src/                   # Test files
+    ├── package.json           # Test dependencies
+    └── vitest.config.ts       # Test configuration
 ```
 
 ## Sample Plugins
@@ -78,14 +83,16 @@ cat samples/plugins/dependency-plugin/package.json
 Run the tests to verify everything works correctly:
 
 ```bash
-# Test all samples
+# Test all samples from the root
 npm test
 
 # Test specific components
-cd samples/project && npm test
 cd samples/plugins/example-plugin && npm test
 cd samples/plugins/dependency-plugin && npm test
+cd samples/tests && npm test  # Test sample project structure
 ```
+
+**Note**: The sample project itself (`samples/project/`) is now a clean Unreal Engine project without JavaScript testing infrastructure. All structural validation tests are in `samples/tests/`.
 
 ## Development Workflow
 
