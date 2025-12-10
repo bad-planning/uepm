@@ -150,7 +150,7 @@
   - Verify source code references example plugin
   - _Requirements: 4.1, 4.2, 4.5_
 
-- [ ] 11. Create sample Unreal project
+- [x] 11. Create sample Unreal project
   - Create minimal .uproject file with EngineAssociation
   - Create package.json with example plugin dependencies
   - Add Config directory with DefaultEngine.ini
@@ -160,7 +160,7 @@
   - Document how to use patch-package
   - _Requirements: 8.1, 8.4, 8.5, 5.3_
 
-- [ ] 11.1 Write unit tests for sample project structure
+- [x] 11.1 Write unit tests for sample project structure
   - Verify .uproject is valid
   - Verify package.json has correct dependencies
   - Verify README documentation exists

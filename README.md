@@ -20,13 +20,13 @@ Lightweight validation hook that checks plugin compatibility on every `npm insta
 #### [`@uepm/core`](./packages/core)
 Shared utilities for UProject and package.json management. Used internally by other packages.
 
-### Example Plugins
+### Sample Projects and Plugins
 
-#### [`@uepm/example-plugin`](./packages/example-plugin)
-Example Unreal Engine plugin demonstrating the NPM distribution pattern.
-
-#### [`@uepm/dependency-plugin`](./packages/dependency-plugin)
-Example plugin demonstrating plugin-to-plugin dependencies via NPM.
+#### [`samples/`](./samples)
+Complete examples demonstrating UEPM usage:
+- **Sample Project**: A configured Unreal Engine project ready for NPM plugins
+- **Example Plugins**: Demonstration plugins showing NPM distribution patterns
+- **Documentation**: Comprehensive guides for setup and usage
 
 ## Quick Start
 
@@ -41,11 +41,24 @@ npx @uepm/init
 
 ```bash
 npm install @uepm/example-plugin
+# or try the sample project in samples/project/
 ```
 
 ### 3. Open your project in Unreal Engine
 
 Plugins from node_modules will be automatically discovered!
+
+## Try the Sample Project
+
+For a complete working example:
+
+```bash
+cd samples/project
+npm install
+# Open SampleProject.uproject in Unreal Engine
+```
+
+See [`samples/README.md`](./samples/README.md) for detailed documentation.
 
 ## How it works
 
@@ -91,12 +104,16 @@ npm test
 
 ```
 uepm/
-├── packages/
+├── packages/                   # NPM packages
 │   ├── core/                   # Shared utilities
 │   ├── init/                   # One-time initialization tool
-│   ├── validate/               # Postinstall validation hook
-│   ├── example-plugin/         # Example plugin
-│   └── dependency-plugin/      # Plugin with dependencies
+│   └── validate/               # Postinstall validation hook
+├── samples/                    # Example projects and plugins
+│   ├── plugins/                # Sample plugins
+│   │   ├── example-plugin/     # Basic plugin example
+│   │   └── dependency-plugin/  # Plugin with dependencies
+│   ├── project/                # Sample Unreal Engine project
+│   └── README.md               # Samples documentation
 ├── package.json                # Root package.json with workspaces
 └── README.md                   # This file
 ```

@@ -4,7 +4,9 @@
   "private": true,
   "description": "Unreal Engine Package Manager - Monorepo",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "samples/plugins/*",
+    "samples/project"
   ],
   "scripts": {
     "build": "npm run build --workspaces --if-present",
