@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Plugin demonstrating dependencies on other NPM plugins",
   "main": "DependencyPlugin.uplugin",
+  "scripts": {
+    "test": "vitest --run",
+    "test:watch": "vitest"
+  },
   "unreal": {
     "engineVersion": ">=5.0.0 <6.0.0",
     "pluginName": "DependencyPlugin"
@@ -18,8 +22,12 @@
     "unreal",
     "unreal-engine",
     "plugin",
-    "uepm"
+    "uepm",
+    "dependency"
   ],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

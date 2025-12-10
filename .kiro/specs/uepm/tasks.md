@@ -116,7 +116,7 @@
 - [x] 8. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Create example plugin package
+- [x] 9. Create example plugin package
   - Create directory structure for @uepm/example-plugin
   - Create ExamplePlugin.uplugin descriptor with metadata
   - Create package.json with unreal.engineVersion field
@@ -127,14 +127,14 @@
   - Add README.md with NPM distribution documentation
   - _Requirements: 3.1, 3.2, 3.4, 3.5, 2.3_
 
-- [ ] 9.1 Write unit tests for example plugin structure
+- [x] 9.1 Write unit tests for example plugin structure
   - Verify .uplugin file exists and is valid JSON
   - Verify package.json has required fields
   - Verify source files exist
   - Verify README documentation exists
   - _Requirements: 3.1, 3.2, 3.4, 3.5_
 
-- [ ] 10. Create dependency plugin package
+- [x] 10. Create dependency plugin package
   - Create directory structure for @uepm/dependency-plugin
   - Create DependencyPlugin.uplugin with Plugins dependency array
   - Create package.json declaring @uepm/example-plugin as dependency
@@ -144,7 +144,7 @@
   - Add README.md explaining dependency pattern
   - _Requirements: 4.1, 4.2, 4.5, 2.4_
 
-- [ ] 10.1 Write unit tests for dependency plugin structure
+- [x] 10.1 Write unit tests for dependency plugin structure
   - Verify .uplugin declares plugin dependencies
   - Verify package.json declares NPM dependencies
   - Verify source code references example plugin
