@@ -6,7 +6,6 @@
   "workspaces": [
     "packages/*",
     "samples/plugins/*",
-    "samples/project",
     "samples/tests"
   ],
   "scripts": {
