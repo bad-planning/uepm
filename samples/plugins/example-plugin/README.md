@@ -1,94 +1,89 @@
 # @uepm/example-plugin
 
-Example Unreal Engine plugin distributed via NPM, demonstrating the UEPM integration pattern.
-
-## Overview
-
-This plugin serves as a reference implementation for distributing Unreal Engine plugins through NPM. It demonstrates:
-
-- Proper plugin structure for NPM distribution
-- Engine version compatibility specification
-- Basic plugin module implementation with logging
-- Integration with the UEPM ecosystem
+Example Unreal Engine plugin distributed via NPM, demonstrating the UEPM (Unreal Engine Package Manager) workflow.
 
 ## Installation
 
-### Prerequisites
+```bash
+npm install @uepm/example-plugin
+```
 
-1. Initialize your Unreal project for UEPM:
-   ```bash
-   npx @uepm/init
-   ```
+## Prerequisites
 
-2. Install the plugin:
-   ```bash
-   npm install @uepm/example-plugin
-   ```
+Your Unreal Engine project must be initialized for UEPM:
 
-### Usage
+```bash
+npx @uepm/init
+```
 
-Once installed, the plugin will be automatically discovered by Unreal Engine when you open your project. The plugin provides:
+## What's Included
 
-- A basic module that logs startup and shutdown messages
-- Example of proper plugin structure for NPM distribution
-- Template for creating your own NPM-distributed plugins
+This plugin demonstrates:
+
+- **Basic plugin structure** - Standard Unreal Engine plugin layout
+- **NPM distribution** - Plugin distributed via NPM registry
+- **Engine compatibility** - Semver-based engine version requirements
+- **C++ module** - Simple module with logging functionality
+- **Plugin descriptor** - Proper .uplugin file configuration
 
 ## Plugin Structure
 
 ```
 @uepm/example-plugin/
-├── ExamplePlugin.uplugin          # Plugin descriptor
-├── package.json                   # NPM package configuration
-├── Source/
+├── ExamplePlugin.uplugin     # Plugin descriptor
+├── package.json              # NPM package configuration
+├── Source/                   # C++ source code
 │   └── ExamplePlugin/
-│       ├── ExamplePlugin.Build.cs # Build configuration
+│       ├── Private/
+│       │   ├── ExamplePlugin.cpp
+│       │   └── ExamplePluginModule.cpp
 │       ├── Public/
-│       │   └── ExamplePlugin.h    # Public header
-│       └── Private/
-│           └── ExamplePlugin.cpp  # Implementation
-├── Resources/
-│   └── Icon128.png               # Plugin icon
-└── README.md                     # This file
+│       │   ├── ExamplePlugin.h
+│       │   └── ExamplePluginModule.h
+│       └── ExamplePlugin.Build.cs
+├── Resources/                # Plugin resources
+│   └── Icon128.png
+└── README.md
 ```
 
 ## Engine Compatibility
 
-This plugin is compatible with Unreal Engine versions `>=5.0.0 <6.0.0` as specified in the `package.json` file under the `unreal.engineVersion` field.
+- **Unreal Engine**: 5.0.0 or later (< 6.0.0)
+- **Platforms**: All platforms supported by Unreal Engine
+
+## Usage in Unreal Engine
+
+1. Install the plugin via NPM
+2. Open your project in Unreal Engine
+3. Go to **Edit > Plugins**
+4. Find "Example Plugin" in the list
+5. Enable the plugin
+6. Restart the editor when prompted
+
+The plugin will log a message when loaded:
+
+```
+LogExamplePlugin: Example Plugin has been loaded!
+```
 
 ## Development
 
-### Creating Your Own NPM Plugin
+This plugin serves as a template for creating your own NPM-distributed Unreal Engine plugins. Key features:
 
-Use this plugin as a template for creating your own NPM-distributed Unreal Engine plugins:
+- **Proper package.json** with `unreal.engineVersion` field
+- **Standard plugin structure** following Unreal Engine conventions
+- **Build configuration** with proper module dependencies
+- **NPM publishing** ready with correct file inclusions
 
-1. Copy the structure of this plugin
-2. Update the plugin name in all files
-3. Modify the `package.json` metadata
-4. Update the `.uplugin` descriptor
-5. Implement your plugin functionality
-6. Publish to NPM
+## Creating Your Own Plugin
 
-### Engine Version Specification
+Use this plugin as a starting point:
 
-Specify engine compatibility in your `package.json`:
-
-```json
-{
-  "unreal": {
-    "engineVersion": ">=5.0.0 <6.0.0",
-    "pluginName": "YourPluginName"
-  }
-}
-```
-
-### Using patch-package
-
-If you need to modify this plugin for your project:
-
-1. Make changes to files in `node_modules/@uepm/example-plugin/`
-2. Run `npx patch-package @uepm/example-plugin`
-3. Commit the generated patch file
-4. The patch will be automatically applied on future installs
+1. Copy the plugin structure
+2. Rename files and classes
+3. Update package.json with your plugin details
+4. Implement your plugin functionality
+5. Publish to NPM
 
 ## License
 

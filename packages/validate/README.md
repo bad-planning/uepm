@@ -2,17 +2,57 @@
 
 Validation hook for checking Unreal Engine plugin compatibility with your project's engine version.
 
-## Usage
+## Installation
 
-This package is typically installed automatically by `@uepm/init` and runs as a postinstall hook.
-
-Manual installation:
+This package is typically installed automatically when you run `npx @uepm/init`, but you can install it manually:
 
 ```bash
 npm install --save-dev @uepm/validate
 ```
 
-Add to your package.json:
+## Usage
+
+The validation hook runs automatically during `npm install` via the postinstall script. You can also run it manually:
+
+```bash
+npx uepm-validate
+```
+
+## What it does
+
+1. **Reads your .uproject file** - Extracts the Unreal Engine version
+2. **Scans node_modules** - Finds all installed UEPM plugins
+3. **Checks compatibility** - Validates each plugin's `unreal.engineVersion` against your project
+4. **Reports issues** - Warns about incompatible plugins with specific version requirements
+
+## Example Output
+
+```
+✓ Validating plugins for Unreal Engine 5.7...
+✓ @uepm/example-plugin@1.0.0 - Compatible (requires >=5.0.0 <6.0.0)
+⚠ @uepm/old-plugin@0.5.0 - Incompatible (requires >=4.0.0 <5.0.0)
+  Your engine: 5.7, Plugin requires: >=4.0.0 <5.0.0
+  Consider updating the plugin or your engine version.
+```
+
+## Plugin Compatibility
+
+Plugins specify their engine compatibility in package.json:
+
+```json
+{
+  "name": "@uepm/my-plugin",
+  "unreal": {
+    "engineVersion": ">=5.0.0 <6.0.0"
+  }
+}
+```
+
+The validation uses semantic versioning (semver) to check compatibility.
+
+## Integration
+
+Add to your package.json postinstall script:
 
 ```json
 {
@@ -22,19 +62,12 @@ Add to your package.json:
 }
 ```
 
-## What it does
-
-On every `npm install`, this hook:
-1. Reads your .uproject file to get the engine version
-2. Scans installed plugins in node_modules
-3. Checks each plugin's engine version compatibility
-4. Warns about any incompatible plugins
+This ensures validation runs automatically after installing dependencies.
 
 ## Requirements
 
-- Node.js >= 18.0.0
-- Unreal Engine project with .uproject file
-- Plugins with `unreal.engineVersion` field in package.json
+- Node.js 18.x or later
+- An Unreal Engine project initialized with `@uepm/init`
 
 ## License
 

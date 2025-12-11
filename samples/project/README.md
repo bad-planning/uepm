@@ -4,7 +4,7 @@ This is a sample Unreal Engine project that demonstrates how to use UEPM (Unreal
 
 ## Prerequisites
 
-- Unreal Engine 5.3 or compatible version
+- Unreal Engine 5.7 or compatible version
 - Node.js 18.x or later
 - NPM (comes with Node.js)
 
@@ -25,19 +25,17 @@ This command will:
 
 ### 2. Install Plugin Dependencies
 
-Install the example plugins and their dependencies:
+Install the example plugins from NPM:
 
 ```bash
-npm install
+npm install @uepm/example-plugin @uepm/dependency-plugin
 ```
 
 This will:
-- Link the `@uepm/example-plugin` and `@uepm/dependency-plugin` packages from the monorepo
-- Make them available in the workspace's shared `node_modules/@uepm/` directory
+- Download the plugins from the NPM registry
+- Install them in your project's `node_modules/@uepm/` directory
 - Run the postinstall hook to validate engine compatibility
 - Apply any existing patches via `patch-package`
-
-**Note**: In this monorepo setup, plugins are available at the workspace root level (`../../node_modules/@uepm/`) rather than in the project's local `node_modules`. This is normal NPM workspace behavior and Unreal Engine will find them correctly.
 
 ### 3. Open the Project in Unreal Engine
 

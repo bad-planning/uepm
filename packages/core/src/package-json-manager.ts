@@ -155,7 +155,7 @@ export function addPostinstallScript(
       ...modified.scripts,
       postinstall: command
     };
-  } else if (!existingPostinstall.includes(command)) {
+  } else if (!existingPostinstall.includes('uepm-validate')) {
     // Existing postinstall, append the command
     modified.scripts = {
       ...modified.scripts,

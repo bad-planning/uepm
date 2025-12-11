@@ -8,6 +8,7 @@ import {
   UEPMError,
 } from '@uepm/core';
 import * as packageJsonManager from '@uepm/core';
+import { setupLocalPlugins } from './postinstall-setup';
 
 // Export command-related classes
 export { CommandRegistry, Command } from './command-registry';
@@ -71,6 +72,14 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
       packageJson = packageJsonManager.ensureValidateDependency(packageJson);
       
       await packageJsonManager.write(projectDir, packageJson);
+    }
+
+    // Step 4: Set up local plugin symlinks (for file: dependencies)
+    try {
+      await setupLocalPlugins(projectDir);
+    } catch (error) {
+      // Don't fail the entire init if setup fails, just warn
+      console.warn('⚠ Warning: Failed to set up local plugin symlinks:', error instanceof Error ? error.message : String(error));
     }
 
     // Success!

@@ -1,37 +1,71 @@
 # @uepm/init
 
-Initialize Unreal Engine projects to use NPM-based plugins.
+Initialize Unreal Engine projects for NPM plugin support.
+
+## Installation
+
+```bash
+npm install -g @uepm/init
+```
+
+Or use directly with npx:
+
+```bash
+npx @uepm/init
+```
 
 ## Usage
 
-Run once in your Unreal project directory:
+Navigate to your Unreal Engine project directory and run:
 
 ```bash
 npx @uepm/init
 ```
 
 This will:
-- Add `node_modules` to your .uproject's AdditionalPluginDirectories
-- Create or update package.json with validation hooks
-- Set up automatic engine compatibility checking
+
+1. **Modify your .uproject file** - Adds `node_modules` to `AdditionalPluginDirectories`
+2. **Create/update package.json** - Sets up NPM configuration with postinstall validation
+3. **Install validation hook** - Adds `@uepm/validate` to check plugin compatibility
+4. **Set up local plugin symlinks** - Ensures plugins work in monorepo environments
+
+## Options
+
+- `--force, -f` - Force reinitialization even if already initialized
+- `--project-dir <path>, -d <path>` - Specify project directory (defaults to current directory)
+- `--help, -h` - Show help information
+- `--version, -V` - Show version number
+
+## Examples
+
+```bash
+# Initialize current directory
+npx @uepm/init
+
+# Initialize specific project
+npx @uepm/init --project-dir ./MyUnrealProject
+
+# Force reinitialization
+npx @uepm/init --force
+```
 
 ## What it does
 
-1. Finds your .uproject file
-2. Modifies it to include `node_modules` in plugin search paths
-3. Creates/updates package.json with postinstall hook
-4. Installs the validation hook
-
-After running this once, you can install Unreal plugins via NPM:
+After running the init command, your project will be ready to install Unreal Engine plugins via NPM:
 
 ```bash
-npm install @uepm/example-plugin
+# Install plugins
+npm install @uepm/example-plugin @uepm/dependency-plugin
+
+# Open your project in Unreal Engine
+# Plugins will be automatically discovered
 ```
 
 ## Requirements
 
-- Node.js >= 18.0.0
-- Unreal Engine project with .uproject file
+- Node.js 18.x or later
+- Unreal Engine 5.0 or later
+- An existing Unreal Engine project with a .uproject file
 
 ## License
 

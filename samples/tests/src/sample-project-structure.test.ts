@@ -67,21 +67,27 @@ describe('Sample Project Structure', () => {
       expect(packageJson.description).toContain('UEPM');
     });
 
-    it('should have example plugin dependencies when installed', async () => {
+    it('should be ready for plugin installation', async () => {
       const packageJsonPath = join(SAMPLE_PROJECT_DIR, 'package.json');
       const content = await readFile(packageJsonPath, 'utf-8');
       const packageJson = JSON.parse(content);
       
-      // Verify dependencies structure exists (plugins can be installed via GitHub test script)
-      expect(packageJson).toHaveProperty('dependencies');
-      expect(typeof packageJson.dependencies).toBe('object');
+      // Verify the project is set up for UEPM plugins
+      expect(packageJson.name).toBe('sample-project');
+      expect(packageJson.private).toBe(true);
       
-      // If plugins are installed, verify they have correct versions
-      if (packageJson.dependencies['@uepm/example-plugin']) {
-        expect(packageJson.dependencies['@uepm/example-plugin']).toBe('^1.0.0');
-      }
-      if (packageJson.dependencies['@uepm/dependency-plugin']) {
-        expect(packageJson.dependencies['@uepm/dependency-plugin']).toBe('^1.0.0');
+      // Dependencies may or may not exist depending on installation state
+      // This is normal - plugins are installed via `npm install @uepm/example-plugin`
+      if (packageJson.dependencies) {
+        expect(typeof packageJson.dependencies).toBe('object');
+        
+        // If plugins are installed, verify they have correct versions
+        if (packageJson.dependencies['@uepm/example-plugin']) {
+          expect(packageJson.dependencies['@uepm/example-plugin']).toBe('^1.0.0');
+        }
+        if (packageJson.dependencies['@uepm/dependency-plugin']) {
+          expect(packageJson.dependencies['@uepm/dependency-plugin']).toBe('^1.0.0');
+        }
       }
     });
 
