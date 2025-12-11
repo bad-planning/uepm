@@ -30,3 +30,5 @@ npm-debug.log*
 packages/*/package-lock.json
 
 samples/project/Plugins/Developer/RiderLink/
+
+.env

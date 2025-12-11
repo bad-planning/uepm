@@ -1,19 +1,15 @@
 {
-  "name": "sample-project",
+  "name": "sampleproject",
   "version": "1.0.0",
   "private": true,
-  "description": "Sample Unreal Engine project demonstrating UEPM plugin system",
+  "description": "Unreal Engine project with NPM plugin support",
   "scripts": {
-    "postinstall": "patch-package && uepm-validate"
-  },
-  "dependencies": {
-    "@uepm/example-plugin": "file:../plugins/example-plugin",
-    "@uepm/dependency-plugin": "file:../plugins/dependency-plugin"
+    "postinstall": "uepm-validate"
   },
   "devDependencies": {
-    "@uepm/validate": "file:../../packages/validate",
-    "patch-package": "^8.0.0"
+    "@uepm/validate": "^0.1.0"
   },
-  "keywords": ["unreal", "unreal-engine", "uepm", "sample"],
-  "license": "MIT"
+  "dependencies": {
+    "@uepm/example-plugin": "^1.0.1"
+  }
 }

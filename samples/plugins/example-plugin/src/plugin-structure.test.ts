@@ -109,14 +109,14 @@ describe('Example Plugin Structure', () => {
     // Verify content includes required sections
     const content = readFileSync(readmePath, 'utf-8');
     expect(content).toContain('# @uepm/example-plugin');
-    expect(content).toContain('## Overview');
+    expect(content).toContain('## What\'s Included');
     expect(content).toContain('## Installation');
     expect(content).toContain('## Plugin Structure');
     expect(content).toContain('## Engine Compatibility');
     expect(content).toContain('## Development');
     expect(content).toContain('npx @uepm/init');
     expect(content).toContain('npm install @uepm/example-plugin');
-    expect(content).toContain('patch-package');
+    expect(content).toContain('## License');
   });
 
   it('should have Resources directory with icon', () => {
