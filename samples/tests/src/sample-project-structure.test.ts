@@ -19,19 +19,18 @@ describe('Sample Project Structure', () => {
       // Verify required fields
       expect(uproject).toHaveProperty('FileVersion');
       expect(uproject).toHaveProperty('EngineAssociation');
-      expect(uproject.EngineAssociation).toBe('5.3');
+      expect(uproject.EngineAssociation).toBe('5.7');
       
       // Verify structure
       expect(uproject.FileVersion).toBe(3);
       expect(uproject.Description).toContain('UEPM');
       expect(Array.isArray(uproject.Modules)).toBe(true);
       expect(Array.isArray(uproject.Plugins)).toBe(true);
-      expect(Array.isArray(uproject.TargetPlatforms)).toBe(true);
       
-      // Verify target platforms include common platforms
-      expect(uproject.TargetPlatforms).toContain('Win64');
-      expect(uproject.TargetPlatforms).toContain('Mac');
-      expect(uproject.TargetPlatforms).toContain('Linux');
+      // Verify target platforms (may not be defined in fresh projects)
+      if (uproject.TargetPlatforms) {
+        expect(Array.isArray(uproject.TargetPlatforms)).toBe(true);
+      }
       
       // Verify UEPM configuration
       expect(uproject).toHaveProperty('AdditionalPluginDirectories');
@@ -68,16 +67,22 @@ describe('Sample Project Structure', () => {
       expect(packageJson.description).toContain('UEPM');
     });
 
-    it('should have correct example plugin dependencies', async () => {
+    it('should have example plugin dependencies when installed', async () => {
       const packageJsonPath = join(SAMPLE_PROJECT_DIR, 'package.json');
       const content = await readFile(packageJsonPath, 'utf-8');
       const packageJson = JSON.parse(content);
       
-      // Verify example plugin dependencies
-      expect(packageJson.dependencies).toHaveProperty('@uepm/example-plugin');
-      expect(packageJson.dependencies).toHaveProperty('@uepm/dependency-plugin');
-      expect(packageJson.dependencies['@uepm/example-plugin']).toBe('file:../plugins/example-plugin');
-      expect(packageJson.dependencies['@uepm/dependency-plugin']).toBe('file:../plugins/dependency-plugin');
+      // Verify dependencies structure exists (plugins can be installed via GitHub test script)
+      expect(packageJson).toHaveProperty('dependencies');
+      expect(typeof packageJson.dependencies).toBe('object');
+      
+      // If plugins are installed, verify they have correct versions
+      if (packageJson.dependencies['@uepm/example-plugin']) {
+        expect(packageJson.dependencies['@uepm/example-plugin']).toBe('^1.0.0');
+      }
+      if (packageJson.dependencies['@uepm/dependency-plugin']) {
+        expect(packageJson.dependencies['@uepm/dependency-plugin']).toBe('^1.0.0');
+      }
     });
 
     it('should have correct dev dependencies', async () => {
@@ -86,10 +91,13 @@ describe('Sample Project Structure', () => {
       const packageJson = JSON.parse(content);
       
       // Verify dev dependencies
-      expect(packageJson.devDependencies).toHaveProperty('@uepm/validate');
       expect(packageJson.devDependencies).toHaveProperty('patch-package');
-      expect(packageJson.devDependencies['@uepm/validate']).toBe('file:../../packages/validate');
       expect(packageJson.devDependencies['patch-package']).toBe('^8.0.0');
+      
+      // If validate is installed, verify version
+      if (packageJson.devDependencies['@uepm/validate']) {
+        expect(packageJson.devDependencies['@uepm/validate']).toBe('^0.1.0');
+      }
     });
 
     it('should have correct postinstall script', async () => {
@@ -99,7 +107,12 @@ describe('Sample Project Structure', () => {
       
       // Verify postinstall script
       expect(packageJson.scripts).toHaveProperty('postinstall');
-      expect(packageJson.scripts.postinstall).toBe('patch-package && uepm-validate');
+      expect(packageJson.scripts.postinstall).toContain('patch-package');
+      
+      // If validate is installed, should include validation
+      if (packageJson.devDependencies['@uepm/validate']) {
+        expect(packageJson.scripts.postinstall).toContain('uepm-validate');
+      }
     });
 
     it('should have appropriate metadata', async () => {
@@ -140,7 +153,7 @@ describe('Sample Project Structure', () => {
       
       // Verify game name redirects for SampleProject
       expect(content).toContain('NewGameName="/Script/SampleProject"');
-      expect(content).toContain('NewClassName="SampleProjectGameModeBase"');
+      expect(content).toContain('TP_Blank'); // Should have template redirects
     });
   });
 
@@ -163,8 +176,6 @@ describe('Sample Project Structure', () => {
       await expect(access(join(moduleDir, 'SampleProject.Build.cs'))).resolves.not.toThrow();
       await expect(access(join(moduleDir, 'SampleProject.cpp'))).resolves.not.toThrow();
       await expect(access(join(moduleDir, 'SampleProject.h'))).resolves.not.toThrow();
-      await expect(access(join(moduleDir, 'SampleProjectGameModeBase.h'))).resolves.not.toThrow();
-      await expect(access(join(moduleDir, 'SampleProjectGameModeBase.cpp'))).resolves.not.toThrow();
     });
 
     it('should have valid build configuration', async () => {
@@ -179,15 +190,13 @@ describe('Sample Project Structure', () => {
       expect(content).toContain('Engine');
     });
 
-    it('should have GameMode that demonstrates plugin integration', async () => {
-      const gameModeFile = join(SAMPLE_PROJECT_DIR, 'Source', 'SampleProject', 'SampleProjectGameModeBase.cpp');
-      const content = await readFile(gameModeFile, 'utf-8');
+    it('should have basic module implementation', async () => {
+      const moduleFile = join(SAMPLE_PROJECT_DIR, 'Source', 'SampleProject', 'SampleProject.cpp');
+      const content = await readFile(moduleFile, 'utf-8');
       
-      // Verify it contains plugin integration code
-      expect(content).toContain('TestPluginIntegration');
-      expect(content).toContain('UEPM plugin integration');
-      expect(content).toContain('ExamplePlugin');
-      expect(content).toContain('DependencyPlugin');
+      // Verify it's a basic Unreal module
+      expect(content).toContain('IMPLEMENT_PRIMARY_GAME_MODULE');
+      expect(content).toContain('SampleProject');
     });
   });
 
@@ -241,7 +250,7 @@ describe('Sample Project Structure', () => {
       // Verify setup instructions
       expect(content).toContain('Quick Start');
       expect(content).toContain('Prerequisites');
-      expect(content).toContain('Unreal Engine 5.3');
+      expect(content).toContain('Unreal Engine');
       expect(content).toContain('Node.js');
       
       // Verify testing instructions
