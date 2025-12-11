@@ -28,3 +28,5 @@ npm-debug.log*
 
 # Package locks (keep root, ignore workspace locks)
 packages/*/package-lock.json
+
+samples/project/Plugins/Developer/RiderLink/

@@ -1,22 +1,25 @@
 {
-  "FileVersion": 3,
-  "EngineAssociation": "5.6",
-  "Category": "",
-  "Description": "Sample Unreal Engine project demonstrating UEPM plugin system",
-  "Modules": [
-    {
-      "Name": "SampleProject",
-      "Type": "Runtime",
-      "LoadingPhase": "Default"
-    }
-  ],
-  "Plugins": [],
-  "AdditionalPluginDirectories": [
-    "node_modules"
-  ],
-  "TargetPlatforms": [
-    "Win64",
-    "Mac",
-    "Linux"
-  ]
+	"FileVersion": 3,
+	"EngineAssociation": "5.7",
+	"Category": "",
+	"Description": "Sample Unreal Engine project demonstrating for UEPM",
+	"Modules": [
+		{
+			"Name": "SampleProject",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"AdditionalPluginDirectories": [
+		
+	],
+	"Plugins": [
+		{
+			"Name": "ModelingToolsEditorMode",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		}
+	]
 }
