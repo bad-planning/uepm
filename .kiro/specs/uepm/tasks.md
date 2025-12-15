@@ -188,5 +188,5 @@
   - Add contributing guidelines
   - _Requirements: 5.3, 6.2_
 
-- [ ] 14. Final checkpoint - Ensure all tests pass
+- [x] 14. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
