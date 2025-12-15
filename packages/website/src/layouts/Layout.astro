@@ -4,21 +4,107 @@ import '../styles/global.css';
 export interface Props {
   title: string;
   description?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
 }
 
-const { title, description = "NPM for Unreal Engine Plugins - UEPM brings familiar package management workflows to Unreal Engine development." } = Astro.props;
+const { 
+  title, 
+  description = "NPM for Unreal Engine Plugins - UEPM brings familiar package management workflows to Unreal Engine development.",
+  ogImage = "/og-image.png",
+  canonicalUrl = Astro.url.href
+} = Astro.props;
+
+const siteTitle = title === "UEPM" ? title : `${title} | UEPM`;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#3b82f6" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalUrl} />
+    
+    <!-- Favicon and icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>{title}</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={siteTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:site_name" content="UEPM" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalUrl} />
+    <meta property="twitter:title" content={siteTitle} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={ogImage} />
+    
+    <!-- Preload critical fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    
+    <!-- Page title -->
+    <title>{siteTitle}</title>
+    
+    <!-- Structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "UEPM",
+        "description": "NPM for Unreal Engine Plugins - Package manager for Unreal Engine development",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Windows, macOS, Linux",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
   </head>
-  <body>
-    <slot />
+  <body class="min-h-screen bg-white text-gray-900 antialiased">
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-md z-50">
+      Skip to main content
+    </a>
+    
+    <div id="app" class="min-h-screen flex flex-col">
+      <main id="main-content" class="flex-1" role="main">
+        <slot />
+      </main>
+    </div>
+    
+    <!-- Focus management script for accessibility -->
+    <script>
+      // Ensure focus is properly managed for keyboard navigation
+      document.addEventListener('DOMContentLoaded', () => {
+        // Add focus-visible polyfill behavior
+        const focusVisibleElements = document.querySelectorAll('button, a, input, textarea, select');
+        focusVisibleElements.forEach(el => {
+          el.addEventListener('focus', () => {
+            if (el.matches(':focus-visible')) {
+              el.classList.add('focus-visible');
+            }
+          });
+          el.addEventListener('blur', () => {
+            el.classList.remove('focus-visible');
+          });
+        });
+      });
+    </script>
   </body>
 </html>

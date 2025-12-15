@@ -11,18 +11,18 @@
   - **Property 10: Component structure supports maintainability**
   - **Validates: Requirements 7.3**
 
-- [ ] 2. Create base layout and global styles
+- [x] 2. Create base layout and global styles
   - Implement main Layout.astro with HTML structure and meta tags
   - Set up Tailwind CSS configuration with custom theme colors
   - Create global CSS with typography and base component styles
   - Configure responsive breakpoints and design tokens
   - _Requirements: 1.5, 6.5_
 
-- [ ] 2.1 Write property test for responsive design
+- [x] 2.1 Write property test for responsive design
   - **Property 2: Responsive design maintains usability**
   - **Validates: Requirements 1.5**
 
-- [ ] 2.2 Write property test for accessibility markup
+- [x] 2.2 Write property test for accessibility markup
   - **Property 9: Accessibility markup is semantically correct**
   - **Validates: Requirements 6.5**
 
