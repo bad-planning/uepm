@@ -157,114 +157,92 @@ update_dependency() {
     "
 }
 
-# Step 5: Sync package versions to workspace version
-print_step "Syncing package versions to workspace version"
+# Step 5: Version bumping and syncing
+print_step "Version bumping and syncing"
 
 workspace_version=$(node -p "require('./package.json').version")
-echo "Workspace version: $workspace_version"
-echo ""
+echo "Current workspace version: $workspace_version"
 
-# Function to sync package version to workspace version
-sync_to_workspace_version() {
+# Function to set package version to a specific version
+set_package_version() {
     local package_file=$1
     local package_name=$2
+    local target_version=$3
     
     if [ "$DRY_RUN" = true ]; then
         if [ -f "$package_file" ]; then
             local current_version=$(node -p "require('./$package_file').version")
-            echo "Would sync $package_name from $current_version to $workspace_version"
+            echo "Would set $package_name from $current_version to $target_version"
         else
-            echo "Would sync $package_name (file not found: $package_file) to $workspace_version"
+            echo "Would set $package_name (file not found: $package_file) to $target_version"
         fi
         return
     fi
     
-    # Update package version to match workspace
+    # Update package version to target version
     if [ -f "$package_file" ]; then
         node -e "
             const fs = require('fs');
             const pkg = JSON.parse(fs.readFileSync('$package_file', 'utf8'));
             const oldVersion = pkg.version;
-            pkg.version = '$workspace_version';
+            pkg.version = '$target_version';
             fs.writeFileSync('$package_file', JSON.stringify(pkg, null, 2) + '\n');
-            console.log('Synced $package_name from ' + oldVersion + ' to $workspace_version');
+            console.log('Set $package_name from ' + oldVersion + ' to $target_version');
         "
     else
         echo "Warning: Package file not found: $package_file"
     fi
 }
 
-# Sync all package versions to workspace version
-sync_to_workspace_version "packages/core/package.json" "@uepm/core"
-sync_to_workspace_version "packages/init/package.json" "@uepm/init"
-sync_to_workspace_version "packages/postinstall/package.json" "@uepm/postinstall"
-sync_to_workspace_version "samples/plugins/example-plugin/package.json" "@uepm/example-plugin"
-sync_to_workspace_version "samples/plugins/dependency-plugin/package.json" "@uepm/dependency-plugin"
-
-# Update internal dependencies to use workspace version
-echo ""
-echo "Updating internal dependencies to workspace version..."
-update_dependency "packages/init/package.json" "@uepm/core" "$workspace_version"
-update_dependency "packages/postinstall/package.json" "@uepm/core" "$workspace_version"
-update_dependency "samples/plugins/dependency-plugin/package.json" "@uepm/example-plugin" "$workspace_version"
-update_dependency "samples/project/package.json" "@uepm/postinstall" "$workspace_version"
-
-print_success "All packages synced to workspace version ($workspace_version)"
-echo ""
-
-# Step 6: Version bumping
-print_step "Version bumping"
-
-# Show current versions (should all be synced now)
-echo "Current versions (after sync):"
-echo "Core: $(node -p "require('./packages/core/package.json').version")"
-echo "Init: $(node -p "require('./packages/init/package.json').version")"
-echo "Postinstall: $(node -p "require('./packages/postinstall/package.json').version")"
-echo "Example Plugin: $(node -p "require('./samples/plugins/example-plugin/package.json').version")"
-echo "Dependency Plugin: $(node -p "require('./samples/plugins/dependency-plugin/package.json').version")"
-echo ""
-
-# Bump workspace version first
-echo "Bumping workspace version..."
+# Calculate new version by bumping workspace version
 if [ "$DRY_RUN" = true ]; then
     echo "Would bump workspace from $workspace_version ($VERSION_TYPE)"
-    new_workspace_version=$workspace_version
+    # Simulate version bump for dry run
+    case $VERSION_TYPE in
+        "patch")
+            new_workspace_version=$(node -e "const semver = require('semver'); console.log(semver.inc('$workspace_version', 'patch'))")
+            ;;
+        "minor")
+            new_workspace_version=$(node -e "const semver = require('semver'); console.log(semver.inc('$workspace_version', 'minor'))")
+            ;;
+        "major")
+            new_workspace_version=$(node -e "const semver = require('semver'); console.log(semver.inc('$workspace_version', 'major'))")
+            ;;
+        *)
+            new_workspace_version=$workspace_version
+            ;;
+    esac
 else
     npm version $VERSION_TYPE --no-git-tag-version
     new_workspace_version=$(node -p "require('./package.json').version")
     echo "Bumped workspace to $new_workspace_version"
 fi
 
-# Now bump all packages to match the new workspace version
-echo "Bumping all packages to match new workspace version ($new_workspace_version)..."
-core_version=$(bump_version "packages/core" "patch")  # We'll override this
-init_version=$(bump_version "packages/init" "patch")
-postinstall_version=$(bump_version "packages/postinstall" "patch")
-example_version=$(bump_version "samples/plugins/example-plugin" "patch")
-dependency_version=$(bump_version "samples/plugins/dependency-plugin" "patch")
+echo "Target version for all packages: $new_workspace_version"
+echo ""
 
-# Override all versions to match workspace
-if [ "$DRY_RUN" = false ]; then
-    sync_to_workspace_version "packages/core/package.json" "@uepm/core"
-    sync_to_workspace_version "packages/init/package.json" "@uepm/init"
-    sync_to_workspace_version "packages/postinstall/package.json" "@uepm/postinstall"
-    sync_to_workspace_version "samples/plugins/example-plugin/package.json" "@uepm/example-plugin"
-    sync_to_workspace_version "samples/plugins/dependency-plugin/package.json" "@uepm/dependency-plugin"
-    
-    # Update all versions to the new workspace version for consistency
-    core_version=$new_workspace_version
-    init_version=$new_workspace_version
-    postinstall_version=$new_workspace_version
-    example_version=$new_workspace_version
-    dependency_version=$new_workspace_version
-fi
+# Set all packages to the new version
+echo "Setting all packages to version $new_workspace_version..."
+set_package_version "packages/core/package.json" "@uepm/core" "$new_workspace_version"
+set_package_version "packages/init/package.json" "@uepm/init" "$new_workspace_version"
+set_package_version "packages/postinstall/package.json" "@uepm/postinstall" "$new_workspace_version"
+set_package_version "samples/plugins/example-plugin/package.json" "@uepm/example-plugin" "$new_workspace_version"
+set_package_version "samples/plugins/dependency-plugin/package.json" "@uepm/dependency-plugin" "$new_workspace_version"
 
-# Update internal dependencies to use new workspace version
-echo "Updating internal dependencies to new workspace version..."
+# Update internal dependencies to use new version
+echo ""
+echo "Updating internal dependencies to version $new_workspace_version..."
 update_dependency "packages/init/package.json" "@uepm/core" "$new_workspace_version"
 update_dependency "packages/postinstall/package.json" "@uepm/core" "$new_workspace_version"
 update_dependency "samples/plugins/dependency-plugin/package.json" "@uepm/example-plugin" "$new_workspace_version"
 update_dependency "samples/project/package.json" "@uepm/postinstall" "$new_workspace_version"
+
+# Set final version variables for publishing
+core_version=$new_workspace_version
+init_version=$new_workspace_version
+postinstall_version=$new_workspace_version
+example_version=$new_workspace_version
+dependency_version=$new_workspace_version
 
 print_success "Version bumping complete"
 echo ""
