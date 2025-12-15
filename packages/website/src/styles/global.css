@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS variables for UEPM theme */
+:root {
+  --color-primary: #3b82f6;
+  --color-primary-dark: #1d4ed8;
+  --color-secondary: #10b981;
+  --color-accent: #f59e0b;
+  --color-text: #1f2937;
+  --color-text-light: #6b7280;
+  --color-background: #ffffff;
+  --color-surface: #f9fafb;
+}
+
+/* Base typography and layout styles */
+@layer base {
+  body {
+    @apply bg-white text-gray-900 antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold leading-tight;
+  }
+  
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl;
+  }
+  
+  h2 {
+    @apply text-3xl md:text-4xl;
+  }
+  
+  h3 {
+    @apply text-2xl md:text-3xl;
+  }
+  
+  p {
+    @apply leading-relaxed;
+  }
+}
+
+/* Component styles */
+@layer components {
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  }
+  
+  .btn-secondary {
+    @apply bg-transparent hover:bg-gray-50 text-gray-900 font-semibold py-3 px-6 rounded-lg border border-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+  }
+  
+  .code-block {
+    @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm;
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  .gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+  
+  .text-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
