@@ -40,7 +40,7 @@ FString FExamplePluginUtils::FormatNumberWithCommas(int32 Number)
         {
             Result = TEXT(",") + Result;
         }
-        Result = NumberString[i] + Result;
+        Result = FString::Chr(NumberString[i]) + Result;
         Count++;
     }
     
