@@ -1,6 +1,6 @@
 {
   "name": "uepm-monorepo",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "Unreal Engine Package Manager - Monorepo",
   "workspaces": [
