@@ -26,7 +26,7 @@
   - **Property 9: Accessibility markup is semantically correct**
   - **Validates: Requirements 6.5**
 
-- [ ] 3. Implement hero section component
+- [x] 3. Implement hero section component
   - Create Hero.astro component with animated gradient background
   - Add prominent headline and subheading text
   - Implement primary and secondary CTA buttons with proper styling
@@ -34,7 +34,7 @@
   - Ensure mobile responsiveness and accessibility
   - _Requirements: 1.1, 1.2, 1.4_
 
-- [ ] 3.1 Write property test for hero section performance
+- [x] 3.1 Write property test for hero section performance
   - **Property 1: Hero section loads within performance threshold**
   - **Validates: Requirements 1.1**
 
