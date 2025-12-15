@@ -1,55 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
 import { addPluginDirectory } from './uproject-manager';
-import { UProjectFile } from './types';
-
-/**
- * Arbitrary generator for valid UProjectFile objects
- * Generates random but valid .uproject file structures
- */
-const uprojectArbitrary = (): fc.Arbitrary<UProjectFile> => {
-  return fc.record({
-    EngineAssociation: fc.oneof(
-      fc.constantFrom('5.0', '5.1', '5.2', '5.3', '5.4'),
-      fc.uuid() // GUID format for launcher builds
-    ),
-    Category: fc.option(fc.string(), { nil: undefined }),
-    Description: fc.option(fc.string(), { nil: undefined }),
-    Modules: fc.option(
-      fc.array(
-        fc.record({
-          Name: fc.string(),
-          Type: fc.constantFrom('Runtime', 'Editor', 'Developer'),
-          LoadingPhase: fc.constantFrom('Default', 'PreDefault', 'PostConfigInit'),
-          AdditionalDependencies: fc.option(fc.array(fc.string()), { nil: undefined })
-        })
-      ),
-      { nil: undefined }
-    ),
-    Plugins: fc.option(
-      fc.array(
-        fc.record({
-          Name: fc.string(),
-          Enabled: fc.boolean(),
-          MarketplaceURL: fc.option(fc.webUrl(), { nil: undefined }),
-          SupportedTargetPlatforms: fc.option(
-            fc.array(fc.constantFrom('Win64', 'Mac', 'Linux')),
-            { nil: undefined }
-          )
-        })
-      ),
-      { nil: undefined }
-    ),
-    AdditionalPluginDirectories: fc.option(
-      fc.array(fc.string()),
-      { nil: undefined }
-    ),
-    TargetPlatforms: fc.option(
-      fc.array(fc.constantFrom('Win64', 'Mac', 'Linux', 'Android', 'iOS')),
-      { nil: undefined }
-    )
-  });
-};
+import { uprojectArbitrary } from './test-generators';
 
 describe('UProject Manager - Property-Based Tests', () => {
   /**

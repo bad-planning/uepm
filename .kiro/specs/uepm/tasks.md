@@ -166,7 +166,7 @@
   - Verify README documentation exists
   - _Requirements: 8.1, 8.4, 8.5_
 
-- [ ] 12. Implement property-based test generators
+- [x] 12. Implement property-based test generators
   - Create arbitrary for valid UProjectFile objects
   - Create arbitrary for engine version strings
   - Create arbitrary for semver range expressions
@@ -174,7 +174,7 @@
   - Configure fast-check with 100 iterations minimum
   - _Requirements: All property tests_
 
-- [ ] 12.1 Write property test for postinstall hook installation
+- [x] 12.1 Write property test for postinstall hook installation
   - **Property 7: Init command installs postinstall hook**
   - **Validates: Requirements 9.2**
 

@@ -11,51 +11,7 @@ import {
   addPostinstallScript,
   ensurePostinstallDependency
 } from './package-json-manager';
-import { PackageJson } from './types';
-
-/**
- * Arbitrary generator for valid PackageJson objects
- * Generates random but valid package.json structures
- */
-const packageJsonArbitrary = (): fc.Arbitrary<PackageJson> => {
-  return fc.record({
-    name: fc.string({ minLength: 1 }).map(s => s.toLowerCase().replace(/[^a-z0-9-]/g, '-')),
-    version: fc.constantFrom('1.0.0', '0.1.0', '2.3.4'),
-    description: fc.option(fc.string(), { nil: undefined }),
-    private: fc.option(fc.boolean(), { nil: undefined }),
-    scripts: fc.option(
-      fc.dictionary(
-        fc.constantFrom('build', 'test', 'start', 'postinstall', 'preinstall'),
-        fc.string()
-      ),
-      { nil: undefined }
-    ),
-    dependencies: fc.option(
-      fc.dictionary(fc.string(), fc.string()),
-      { nil: undefined }
-    ),
-    devDependencies: fc.option(
-      fc.dictionary(fc.string(), fc.string()),
-      { nil: undefined }
-    ),
-    unreal: fc.option(
-      fc.record({
-        engineVersion: fc.option(fc.string(), { nil: undefined }),
-        pluginName: fc.option(fc.string(), { nil: undefined })
-      }),
-      { nil: undefined }
-    )
-  });
-};
-
-/**
- * Arbitrary generator for project names
- */
-const projectNameArbitrary = (): fc.Arbitrary<string> => {
-  return fc.string({ minLength: 1, maxLength: 50 })
-    .map(s => s.toLowerCase().replace(/[^a-z0-9-]/g, '-'))
-    .filter(s => s.length > 0);
-};
+import { packageJsonArbitrary, projectNameArbitrary } from './test-generators';
 
 describe('PackageJson Manager - Property-Based Tests', () => {
   let tempDir: string;

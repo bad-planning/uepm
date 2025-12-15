@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import * as fc from 'fast-check';
 import { init } from './index';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { uprojectArbitrary, packageJsonArbitrary } from '@uepm/core/src/test-generators';
 
 describe('Init Command', () => {
   let tempDir: string;
@@ -216,6 +218,101 @@ describe('Init Command', () => {
       ).length;
       expect(uepmPluginsCount).toBe(1);
       expect(modifiedUproject.AdditionalPluginDirectories).toContain('OtherPlugins');
+    });
+  });
+
+  describe('Property-Based Tests', () => {
+    /**
+     * Feature: uepm, Property 7: Init command installs postinstall hook
+     * Validates: Requirements 9.2
+     * 
+     * For any project directory with a package.json, running init should
+     * add or update the postinstall script to include the validation hook command.
+     */
+    it('Property 7: installs postinstall hook for any package.json', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          uprojectArbitrary(),
+          packageJsonArbitrary(),
+          async (uprojectData, packageJsonData) => {
+            // Create a unique temp directory for this iteration
+            const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'uepm-prop7-test-'));
+            
+            try {
+              // Create .uproject file
+              const uprojectPath = path.join(testDir, 'TestProject.uproject');
+              await fs.writeFile(uprojectPath, JSON.stringify(uprojectData, null, 2));
+              
+              // Create package.json file
+              const packageJsonPath = path.join(testDir, 'package.json');
+              await fs.writeFile(packageJsonPath, JSON.stringify(packageJsonData, null, 2));
+              
+              // Deep clone original package.json to compare later
+              const originalPackageJson = JSON.parse(JSON.stringify(packageJsonData));
+              
+              // Run init
+              const result = await init({ projectDir: testDir });
+              
+              // Verify init succeeded
+              expect(result.success).toBe(true);
+              
+              // Read the modified package.json
+              const modifiedPackageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+              
+              // Verify postinstall hook is configured
+              expect(modifiedPackageJson.scripts).toBeDefined();
+              expect(modifiedPackageJson.scripts.postinstall).toBeDefined();
+              expect(modifiedPackageJson.scripts.postinstall).toContain('uepm-postinstall');
+              
+              // Verify @uepm/postinstall is in devDependencies
+              expect(modifiedPackageJson.devDependencies).toBeDefined();
+              expect(modifiedPackageJson.devDependencies['@uepm/postinstall']).toBeDefined();
+              
+              // Verify all other fields are preserved
+              expect(modifiedPackageJson.name).toEqual(originalPackageJson.name);
+              expect(modifiedPackageJson.version).toEqual(originalPackageJson.version);
+              expect(modifiedPackageJson.description).toEqual(originalPackageJson.description);
+              expect(modifiedPackageJson.private).toEqual(originalPackageJson.private);
+              
+              // Verify existing dependencies are preserved
+              if (originalPackageJson.dependencies) {
+                for (const [key, value] of Object.entries(originalPackageJson.dependencies)) {
+                  expect(modifiedPackageJson.dependencies?.[key]).toEqual(value);
+                }
+              }
+              
+              // Verify existing devDependencies are preserved (except for @uepm/postinstall which may be added)
+              if (originalPackageJson.devDependencies) {
+                for (const [key, value] of Object.entries(originalPackageJson.devDependencies)) {
+                  if (key !== '@uepm/postinstall') {
+                    expect(modifiedPackageJson.devDependencies?.[key]).toEqual(value);
+                  }
+                }
+              }
+              
+              // Verify existing scripts are preserved
+              if (originalPackageJson.scripts) {
+                for (const [key, value] of Object.entries(originalPackageJson.scripts)) {
+                  if (key === 'postinstall') {
+                    // Postinstall should contain the original value
+                    expect(modifiedPackageJson.scripts[key]).toContain(value as string);
+                  } else {
+                    expect(modifiedPackageJson.scripts[key]).toEqual(value);
+                  }
+                }
+              }
+              
+              // Verify unreal field is preserved
+              expect(modifiedPackageJson.unreal).toEqual(originalPackageJson.unreal);
+              
+            } finally {
+              // Clean up this iteration's temp directory
+              await fs.rm(testDir, { recursive: true, force: true });
+            }
+          }
+        ),
+        { numRuns: 100 }
+      );
     });
   });
 });
