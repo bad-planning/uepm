@@ -1,6 +1,6 @@
 {
   "name": "@uepm/init",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Initialize Unreal Engine projects for NPM plugin support",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -36,7 +36,7 @@
     "fast-check": "^3.15.0"
   },
   "dependencies": {
-    "@uepm/core": "^1.0.3",
+    "@uepm/core": "^1.0.4",
     "commander": "^11.1.0"
   }
 }
