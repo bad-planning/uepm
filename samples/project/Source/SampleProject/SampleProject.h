@@ -4,3 +4,6 @@
 
 #include "CoreMinimal.h"
 
+// Include our custom components that demonstrate NPM plugin usage
+#include "PluginDemoComponent.h"
+

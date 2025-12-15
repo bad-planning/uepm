@@ -183,17 +183,31 @@ This project includes two example plugins to demonstrate the UEPM system:
 
 ### @uepm/example-plugin
 
-A basic plugin that demonstrates:
+A utility plugin that provides:
+- **Random Color Generation**: `FExamplePluginUtils::GetRandomColor()`
+- **Number Formatting**: `FExamplePluginUtils::FormatNumberWithCommas()`
+- **Greeting Messages**: `FExamplePluginUtils::GetGreetingMessage()`
+- **Distance Calculation**: `FExamplePluginUtils::CalculateDistance()`
 - Proper NPM package structure for Unreal plugins
 - Engine version compatibility specification
-- Basic plugin module implementation
 
 ### @uepm/dependency-plugin
 
-A plugin that demonstrates:
+A plugin that demonstrates plugin dependencies and provides:
+- **Enhanced Status Messages**: Combines multiple ExamplePlugin utilities
+- **Random Spawn Locations**: `FDependencyPluginFeatures::GetRandomSpawnLocation()`
+- **System Reports**: `FDependencyPluginFeatures::GenerateSystemReport()`
+- **Plugin Integration Demo**: Shows how plugins can use other NPM plugins
 - Plugin-to-plugin dependencies via NPM
 - How dependent plugins are automatically installed
-- Cross-plugin functionality usage
+
+### Sample Project Integration
+
+The sample project now includes:
+- **PluginDemoComponent**: A Blueprint-accessible component that exposes all plugin functions
+- **Enhanced Game Module**: Demonstrates plugin usage in C++ game code
+- **Automatic Testing**: Shows plugin functionality on startup with detailed logging
+- **Blueprint Integration**: All plugin functions are available in Blueprint graphs
 
 ## Development Workflow
 

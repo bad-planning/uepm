@@ -8,7 +8,15 @@ public class SampleProject : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[] { 
+			"Core", 
+			"CoreUObject", 
+			"Engine", 
+			"InputCore", 
+			"EnhancedInput",
+			"ExamplePlugin",      // NPM-distributed plugin
+			"DependencyPlugin"    // NPM-distributed plugin that depends on ExamplePlugin
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

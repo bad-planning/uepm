@@ -63,7 +63,7 @@ describe('Dependency Plugin Structure', () => {
       
       // Verify @uepm/example-plugin dependency
       expect(packageJson.dependencies['@uepm/example-plugin']).toBeDefined();
-      expect(packageJson.dependencies['@uepm/example-plugin']).toMatch(/^\^?0\.1\.\d+$/);
+      expect(packageJson.dependencies['@uepm/example-plugin']).toMatch(/^\^?1\.0\.\d+$/);
     });
 
     it('should have correct package metadata', () => {
@@ -112,7 +112,7 @@ describe('Dependency Plugin Structure', () => {
       
       const implContent = readFileSync(implPath, 'utf-8');
       expect(implContent).toContain('ExamplePlugin');
-      expect(implContent).toContain('UseExamplePluginFunctionality');
+      expect(implContent).toContain('FExamplePluginUtils');
     });
 
     it('should have proper module implementation', () => {
@@ -126,7 +126,7 @@ describe('Dependency Plugin Structure', () => {
       expect(implContent).toContain('IMPLEMENT_MODULE');
       
       // Verify dependency usage
-      expect(implContent).toContain('IsModuleLoaded("ExamplePlugin")');
+      expect(implContent).toContain('FExamplePluginModule::IsAvailable()');
     });
   });
 

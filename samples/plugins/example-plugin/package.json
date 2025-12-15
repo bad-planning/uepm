@@ -1,6 +1,6 @@
 {
   "name": "@uepm/example-plugin",
-  "version": "0.1.5",
+  "version": "1.0.2",
   "description": "Example Unreal Engine plugin distributed via NPM",
   "main": "ExamplePlugin.uplugin",
   "scripts": {

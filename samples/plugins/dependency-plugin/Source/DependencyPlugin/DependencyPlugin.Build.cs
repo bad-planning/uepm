@@ -20,17 +20,15 @@ public class DependencyPlugin : ModuleRules
             new string[]
             {
                 "Core",
-                "ExamplePlugin",
+                "CoreUObject",
+                "Engine",
+                "ExamplePlugin"  // Dependency on ExamplePlugin
             }
         );
 
         PrivateDependencyModuleNames.AddRange(
             new string[]
             {
-                "CoreUObject",
-                "Engine",
-                "Slate",
-                "SlateCore",
             }
         );
 
