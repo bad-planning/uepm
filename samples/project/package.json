@@ -7,7 +7,7 @@
     "postinstall": "uepm-postinstall"
   },
   "devDependencies": {
-    "@uepm/postinstall": "^1.0.4"
+    "@uepm/postinstall": "^1.0.5"
   },
   "dependencies": {
     "@uepm/dependency-plugin": "^1.0.4",
