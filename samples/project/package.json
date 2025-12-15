@@ -4,12 +4,14 @@
   "private": true,
   "description": "Unreal Engine project with NPM plugin support",
   "scripts": {
-    "postinstall": "uepm-validate"
+    "postinstall": "uepm-postinstall"
   },
   "devDependencies": {
+    "@uepm/postinstall": "^0.1.4",
     "@uepm/validate": "^0.1.0"
   },
   "dependencies": {
-    "@uepm/example-plugin": "^1.0.1"
+    "@uepm/dependency-plugin": "^0.1.4",
+    "@uepm/example-plugin": "^0.1.4"
   }
 }

@@ -39,10 +39,10 @@ export async function create(
     private: true,
     description: 'Unreal Engine project with NPM plugin support',
     scripts: {
-      postinstall: 'uepm-validate'
+      postinstall: 'uepm-postinstall'
     },
     devDependencies: {
-      '@uepm/validate': '^0.1.0'
+      '@uepm/postinstall': '^0.1.0'
     }
   };
 
@@ -134,12 +134,12 @@ export async function write(
 /**
  * Add or update the postinstall script in package.json
  * @param packageJson - PackageJson object to modify
- * @param command - Command to add to postinstall (default: 'uepm-validate')
+ * @param command - Command to add to postinstall (default: 'uepm-postinstall')
  * @returns Modified PackageJson object
  */
 export function addPostinstallScript(
   packageJson: PackageJson,
-  command: string = 'uepm-validate'
+  command: string = 'uepm-postinstall'
 ): PackageJson {
   const modified = { ...packageJson };
   
@@ -155,24 +155,24 @@ export function addPostinstallScript(
       ...modified.scripts,
       postinstall: command
     };
-  } else if (!existingPostinstall.includes('uepm-validate')) {
+  } else if (!existingPostinstall.includes('uepm-postinstall')) {
     // Existing postinstall, append the command
     modified.scripts = {
       ...modified.scripts,
       postinstall: `${existingPostinstall} && ${command}`
     };
   }
-  // If command already exists, don't modify
+  // If commands already exist, don't modify
   
   return modified;
 }
 
 /**
- * Ensure @uepm/validate is in devDependencies
+ * Ensure @uepm/postinstall is in devDependencies
  * @param packageJson - PackageJson object to modify
  * @returns Modified PackageJson object
  */
-export function ensureValidateDependency(
+export function ensurePostinstallDependency(
   packageJson: PackageJson
 ): PackageJson {
   const modified = { ...packageJson };
@@ -181,10 +181,10 @@ export function ensureValidateDependency(
     modified.devDependencies = {};
   }
   
-  if (!modified.devDependencies['@uepm/validate']) {
+  if (!modified.devDependencies['@uepm/postinstall']) {
     modified.devDependencies = {
       ...modified.devDependencies,
-      '@uepm/validate': '^0.1.0'
+      '@uepm/postinstall': '^0.1.0'
     };
   }
   

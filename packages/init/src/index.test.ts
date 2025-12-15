@@ -48,15 +48,15 @@ describe('Init Command', () => {
 
       // Verify .uproject was modified
       const modifiedUproject = JSON.parse(await fs.readFile(uprojectPath, 'utf-8'));
-      expect(modifiedUproject.AdditionalPluginDirectories).toContain('node_modules');
+      expect(modifiedUproject.AdditionalPluginDirectories).toContain('UEPMPlugins');
       expect(modifiedUproject.EngineAssociation).toBe('5.3');
       expect(modifiedUproject.Category).toBe('Test');
 
       // Verify package.json was updated
       const modifiedPackageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
-      expect(modifiedPackageJson.scripts.postinstall).toContain('uepm-validate');
+      expect(modifiedPackageJson.scripts.postinstall).toContain('uepm-postinstall');
       expect(modifiedPackageJson.scripts.build).toBe('echo build');
-      expect(modifiedPackageJson.devDependencies['@uepm/validate']).toBeDefined();
+      expect(modifiedPackageJson.devDependencies['@uepm/postinstall']).toBeDefined();
     });
 
     it('should append to existing postinstall script', async () => {
@@ -85,7 +85,7 @@ describe('Init Command', () => {
 
       // Verify postinstall was appended
       const modifiedPackageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
-      expect(modifiedPackageJson.scripts.postinstall).toBe('patch-package && uepm-validate');
+      expect(modifiedPackageJson.scripts.postinstall).toBe('patch-package && uepm-postinstall');
     });
   });
 
@@ -110,8 +110,8 @@ describe('Init Command', () => {
       expect(packageJson.name).toBe('mygame');
       expect(packageJson.version).toBe('1.0.0');
       expect(packageJson.private).toBe(true);
-      expect(packageJson.scripts.postinstall).toBe('uepm-validate');
-      expect(packageJson.devDependencies['@uepm/validate']).toBe('^0.1.0');
+      expect(packageJson.scripts.postinstall).toBe('uepm-postinstall');
+      expect(packageJson.devDependencies['@uepm/postinstall']).toBe('^0.1.0');
     });
   });
 
@@ -128,11 +128,11 @@ describe('Init Command', () => {
 
   describe('handling of already-initialized projects', () => {
     it('should detect already initialized project and skip modification', async () => {
-      // Create a test .uproject file with node_modules already added
+      // Create a test .uproject file with UEPMPlugins already added
       const uprojectPath = path.join(tempDir, 'TestProject.uproject');
       const uprojectContent = {
         EngineAssociation: '5.3',
-        AdditionalPluginDirectories: ['node_modules'],
+        AdditionalPluginDirectories: ['UEPMPlugins'],
       };
       await fs.writeFile(uprojectPath, JSON.stringify(uprojectContent, null, 2));
 
@@ -159,11 +159,11 @@ describe('Init Command', () => {
     });
 
     it('should reinitialize when force flag is set', async () => {
-      // Create a test .uproject file with node_modules already added
+      // Create a test .uproject file with UEPMPlugins already added
       const uprojectPath = path.join(tempDir, 'TestProject.uproject');
       const uprojectContent = {
         EngineAssociation: '5.3',
-        AdditionalPluginDirectories: ['node_modules'],
+        AdditionalPluginDirectories: ['UEPMPlugins'],
       };
       await fs.writeFile(uprojectPath, JSON.stringify(uprojectContent, null, 2));
 
@@ -184,15 +184,15 @@ describe('Init Command', () => {
 
       // Verify package.json was updated
       const modifiedPackageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
-      expect(modifiedPackageJson.scripts.postinstall).toContain('uepm-validate');
+      expect(modifiedPackageJson.scripts.postinstall).toContain('uepm-postinstall');
     });
 
-    it('should not duplicate node_modules in AdditionalPluginDirectories', async () => {
-      // Create a test .uproject file with node_modules already added
+    it('should not duplicate UEPMPlugins in AdditionalPluginDirectories', async () => {
+      // Create a test .uproject file with UEPMPlugins already added
       const uprojectPath = path.join(tempDir, 'TestProject.uproject');
       const uprojectContent = {
         EngineAssociation: '5.3',
-        AdditionalPluginDirectories: ['node_modules', 'OtherPlugins'],
+        AdditionalPluginDirectories: ['UEPMPlugins', 'OtherPlugins'],
       };
       await fs.writeFile(uprojectPath, JSON.stringify(uprojectContent, null, 2));
 
@@ -211,10 +211,10 @@ describe('Init Command', () => {
 
       // Verify node_modules appears only once
       const modifiedUproject = JSON.parse(await fs.readFile(uprojectPath, 'utf-8'));
-      const nodeModulesCount = modifiedUproject.AdditionalPluginDirectories.filter(
-        (dir: string) => dir === 'node_modules'
+      const uepmPluginsCount = modifiedUproject.AdditionalPluginDirectories.filter(
+        (dir: string) => dir === 'UEPMPlugins'
       ).length;
-      expect(nodeModulesCount).toBe(1);
+      expect(uepmPluginsCount).toBe(1);
       expect(modifiedUproject.AdditionalPluginDirectories).toContain('OtherPlugins');
     });
   });

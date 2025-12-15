@@ -58,7 +58,7 @@ jobs:
           echo "Current versions:"
           echo "Core: $(node -p "require('./packages/core/package.json').version")"
           echo "Init: $(node -p "require('./packages/init/package.json').version")"
-          echo "Validate: $(node -p "require('./packages/validate/package.json').version")"
+          echo "Postinstall: $(node -p "require('./packages/postinstall/package.json').version")"
           echo "Example Plugin: $(node -p "require('./samples/plugins/example-plugin/package.json').version")"
           echo "Dependency Plugin: $(node -p "require('./samples/plugins/dependency-plugin/package.json').version")"
 
@@ -106,14 +106,14 @@ jobs:
 
           # Update core dependency in other packages
           update_dependency "packages/init/package.json" "@uepm/core" "$core_version"
-          update_dependency "packages/validate/package.json" "@uepm/core" "$core_version"
+          update_dependency "packages/postinstall/package.json" "@uepm/core" "$core_version"
 
           # Bump other packages
           echo "=== Bumping @uepm/init ==="
           init_version=$(bump_version "packages/init" "${{ inputs.version_type }}")
 
-          echo "=== Bumping @uepm/validate ==="
-          validate_version=$(bump_version "packages/validate" "${{ inputs.version_type }}")
+          echo "=== Bumping @uepm/postinstall ==="
+          postinstall_version=$(bump_version "packages/postinstall" "${{ inputs.version_type }}")
 
           echo "=== Bumping @uepm/example-plugin ==="
           example_version=$(bump_version "samples/plugins/example-plugin" "${{ inputs.version_type }}")
@@ -124,7 +124,7 @@ jobs:
           dependency_version=$(bump_version "samples/plugins/dependency-plugin" "${{ inputs.version_type }}")
 
           # Update sample project dependencies
-          update_dependency "samples/project/package.json" "@uepm/validate" "$validate_version"
+          update_dependency "samples/project/package.json" "@uepm/postinstall" "$postinstall_version"
 
           # Commit version changes
           git add .
@@ -143,8 +143,8 @@ jobs:
           echo "Publishing @uepm/init@$init_version"
           cd packages/init && npm publish --access public && cd ../..
           
-          echo "Publishing @uepm/validate@$validate_version"
-          cd packages/validate && npm publish --access public && cd ../..
+          echo "Publishing @uepm/postinstall@$postinstall_version"
+          cd packages/postinstall && npm publish --access public && cd ../..
           
           echo "Publishing @uepm/example-plugin@$example_version"
           cd samples/plugins/example-plugin && npm publish --access public && cd ../../..
@@ -159,6 +159,6 @@ jobs:
           echo "=== Publication Summary ==="
           echo "@uepm/core: $core_version"
           echo "@uepm/init: $init_version"
-          echo "@uepm/validate: $validate_version"
+          echo "@uepm/postinstall: $postinstall_version"
           echo "@uepm/example-plugin: $example_version"
           echo "@uepm/dependency-plugin: $dependency_version"

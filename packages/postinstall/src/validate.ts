@@ -220,7 +220,7 @@ export function formatWarning(
  * @param projectDir - Path to the project directory
  * @returns ValidationResult
  */
-export async function validate(
+export async function validatePlugins(
   projectDir: string
 ): Promise<ValidationResult> {
   const result: ValidationResult = {

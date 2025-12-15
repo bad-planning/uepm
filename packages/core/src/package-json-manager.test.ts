@@ -9,7 +9,7 @@ import {
   read,
   write,
   addPostinstallScript,
-  ensureValidateDependency
+  ensurePostinstallDependency
 } from './package-json-manager';
 import { PackageJson } from './types';
 
@@ -112,11 +112,11 @@ describe('PackageJson Manager - Property-Based Tests', () => {
           // Verify postinstall hook is configured
           expect(packageJson.scripts).toBeDefined();
           expect(packageJson.scripts?.postinstall).toBeDefined();
-          expect(packageJson.scripts?.postinstall).toContain('uepm-validate');
+          expect(packageJson.scripts?.postinstall).toContain('uepm-postinstall');
           
-          // Verify @uepm/validate is in devDependencies
+          // Verify @uepm/postinstall is in devDependencies
           expect(packageJson.devDependencies).toBeDefined();
-          expect(packageJson.devDependencies?.['@uepm/validate']).toBeDefined();
+          expect(packageJson.devDependencies?.['@uepm/postinstall']).toBeDefined();
         } finally {
           // Clean up this iteration's temp directory
           await fs.rm(testDir, { recursive: true, force: true });
@@ -153,8 +153,8 @@ describe('PackageJson Manager - Property-Based Tests', () => {
           // Add postinstall script
           let modified = addPostinstallScript(packageJson);
           
-          // Ensure validate dependency
-          modified = ensureValidateDependency(modified);
+          // Ensure postinstall dependency
+          modified = ensurePostinstallDependency(modified);
           
           // Write back
           await write(testDir, modified);
@@ -164,10 +164,10 @@ describe('PackageJson Manager - Property-Based Tests', () => {
           
           // Verify postinstall hook includes uepm-validate
           expect(modifiedPackageJson.scripts?.postinstall).toBeDefined();
-          expect(modifiedPackageJson.scripts?.postinstall).toContain('uepm-validate');
+          expect(modifiedPackageJson.scripts?.postinstall).toContain('uepm-postinstall');
           
-          // Verify @uepm/validate is in devDependencies
-          expect(modifiedPackageJson.devDependencies?.['@uepm/validate']).toBeDefined();
+          // Verify @uepm/postinstall is in devDependencies
+          expect(modifiedPackageJson.devDependencies?.['@uepm/postinstall']).toBeDefined();
           
           // Verify all other fields are preserved
           expect(modifiedPackageJson.name).toEqual(originalCopy.name);
@@ -182,10 +182,10 @@ describe('PackageJson Manager - Property-Based Tests', () => {
             }
           }
           
-          // Verify existing devDependencies are preserved (except for @uepm/validate which may be added)
+          // Verify existing devDependencies are preserved (except for @uepm/postinstall which may be added)
           if (originalCopy.devDependencies) {
             for (const [key, value] of Object.entries(originalCopy.devDependencies)) {
-              if (key !== '@uepm/validate') {
+              if (key !== '@uepm/postinstall') {
                 expect(modifiedPackageJson.devDependencies?.[key]).toEqual(value);
               }
             }

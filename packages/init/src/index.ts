@@ -8,7 +8,6 @@ import {
   UEPMError,
 } from '@uepm/core';
 import * as packageJsonManager from '@uepm/core';
-import { setupLocalPlugins } from './postinstall-setup';
 
 // Export command-related classes
 export { CommandRegistry, Command } from './command-registry';
@@ -41,8 +40,8 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
     const project = await readProject(uprojectPath);
 
     // Check if already initialized (unless force flag is set)
-    const alreadyHasNodeModules = hasPluginDirectory(project, 'node_modules');
-    if (alreadyHasNodeModules && !options.force) {
+    const alreadyHasUEPMPlugins = hasPluginDirectory(project, 'UEPMPlugins');
+    if (alreadyHasUEPMPlugins && !options.force) {
       return {
         success: true,
         message: 'Project is already initialized for NPM plugin support.',
@@ -50,8 +49,8 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
       };
     }
 
-    // Add node_modules to AdditionalPluginDirectories
-    const modifiedProject = addPluginDirectory(project, 'node_modules');
+    // Add UEPMPlugins to AdditionalPluginDirectories
+    const modifiedProject = addPluginDirectory(project, 'UEPMPlugins');
     await writeProject(uprojectPath, modifiedProject);
 
     // Step 3: Create or update package.json
@@ -68,22 +67,16 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
       // Add postinstall script
       packageJson = packageJsonManager.addPostinstallScript(packageJson);
       
-      // Ensure @uepm/validate is in devDependencies
-      packageJson = packageJsonManager.ensureValidateDependency(packageJson);
+      // Ensure @uepm/postinstall is in devDependencies
+      packageJson = packageJsonManager.ensurePostinstallDependency(packageJson);
       
       await packageJsonManager.write(projectDir, packageJson);
     }
 
-    // Step 4: Set up local plugin symlinks (for file: dependencies)
-    try {
-      await setupLocalPlugins(projectDir);
-    } catch (error) {
-      // Don't fail the entire init if setup fails, just warn
-      console.warn('⚠ Warning: Failed to set up local plugin symlinks:', error instanceof Error ? error.message : String(error));
-    }
+    // Note: Plugin setup will be handled by the postinstall hook
 
     // Success!
-    const actionTaken = alreadyHasNodeModules ? 'reinitialized' : 'initialized';
+    const actionTaken = alreadyHasUEPMPlugins ? 'reinitialized' : 'initialized';
     return {
       success: true,
       message: `Successfully ${actionTaken} project for NPM plugin support!\n\nNext steps:\n1. Run 'npm install' to install dependencies\n2. Install Unreal Engine plugins via NPM (e.g., 'npm install @uepm/example-plugin')\n3. Open your project in Unreal Engine`,

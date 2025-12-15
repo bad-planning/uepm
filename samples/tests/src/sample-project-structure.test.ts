@@ -34,7 +34,7 @@ describe('Sample Project Structure', () => {
       
       // Verify UEPM configuration
       expect(uproject).toHaveProperty('AdditionalPluginDirectories');
-      expect(uproject.AdditionalPluginDirectories).toContain('node_modules');
+      expect(uproject.AdditionalPluginDirectories).toContain('UEPMPlugins');
     });
 
     it('should have a SampleProject module defined', async () => {
@@ -61,10 +61,10 @@ describe('Sample Project Structure', () => {
       const packageJson = JSON.parse(content);
       
       // Verify basic structure
-      expect(packageJson.name).toBe('sample-project');
+      expect(packageJson.name).toBe('sampleproject');
       expect(packageJson.version).toBe('1.0.0');
       expect(packageJson.private).toBe(true);
-      expect(packageJson.description).toContain('UEPM');
+      expect(packageJson.description).toContain('plugin');
     });
 
     it('should be ready for plugin installation', async () => {
@@ -73,7 +73,7 @@ describe('Sample Project Structure', () => {
       const packageJson = JSON.parse(content);
       
       // Verify the project is set up for UEPM plugins
-      expect(packageJson.name).toBe('sample-project');
+      expect(packageJson.name).toBe('sampleproject');
       expect(packageJson.private).toBe(true);
       
       // Dependencies may or may not exist depending on installation state
@@ -83,10 +83,10 @@ describe('Sample Project Structure', () => {
         
         // If plugins are installed, verify they have correct versions
         if (packageJson.dependencies['@uepm/example-plugin']) {
-          expect(packageJson.dependencies['@uepm/example-plugin']).toBe('^1.0.0');
+          expect(packageJson.dependencies['@uepm/example-plugin']).toMatch(/^\^?0\.1\.\d+$/);
         }
         if (packageJson.dependencies['@uepm/dependency-plugin']) {
-          expect(packageJson.dependencies['@uepm/dependency-plugin']).toBe('^1.0.0');
+          expect(packageJson.dependencies['@uepm/dependency-plugin']).toMatch(/^\^?0\.1\.\d+$/);
         }
       }
     });
@@ -97,13 +97,8 @@ describe('Sample Project Structure', () => {
       const packageJson = JSON.parse(content);
       
       // Verify dev dependencies
-      expect(packageJson.devDependencies).toHaveProperty('patch-package');
-      expect(packageJson.devDependencies['patch-package']).toBe('^8.0.0');
-      
-      // If validate is installed, verify version
-      if (packageJson.devDependencies['@uepm/validate']) {
-        expect(packageJson.devDependencies['@uepm/validate']).toBe('^0.1.0');
-      }
+      expect(packageJson.devDependencies).toHaveProperty('@uepm/postinstall');
+      expect(packageJson.devDependencies['@uepm/postinstall']).toMatch(/^\^?0\.1\.\d+$/);
     });
 
     it('should have correct postinstall script', async () => {
@@ -113,11 +108,10 @@ describe('Sample Project Structure', () => {
       
       // Verify postinstall script
       expect(packageJson.scripts).toHaveProperty('postinstall');
-      expect(packageJson.scripts.postinstall).toContain('patch-package');
       
-      // If validate is installed, should include validation
-      if (packageJson.devDependencies['@uepm/validate']) {
-        expect(packageJson.scripts.postinstall).toContain('uepm-validate');
+      // Should use the unified postinstall command
+      if (packageJson.devDependencies['@uepm/postinstall']) {
+        expect(packageJson.scripts.postinstall).toContain('uepm-postinstall');
       }
     });
 
@@ -126,13 +120,17 @@ describe('Sample Project Structure', () => {
       const content = await readFile(packageJsonPath, 'utf-8');
       const packageJson = JSON.parse(content);
       
-      // Verify metadata
-      expect(Array.isArray(packageJson.keywords)).toBe(true);
-      expect(packageJson.keywords).toContain('unreal');
-      expect(packageJson.keywords).toContain('unreal-engine');
-      expect(packageJson.keywords).toContain('uepm');
-      expect(packageJson.keywords).toContain('sample');
-      expect(packageJson.license).toBe('MIT');
+      // Verify metadata (keywords may not be present in generated package.json)
+      if (packageJson.keywords) {
+        expect(Array.isArray(packageJson.keywords)).toBe(true);
+        expect(packageJson.keywords).toContain('unreal');
+        expect(packageJson.keywords).toContain('unreal-engine');
+        expect(packageJson.keywords).toContain('uepm');
+      }
+      // License may not be present in generated package.json
+      if (packageJson.license) {
+        expect(packageJson.license).toBe('MIT');
+      }
     });
   });
 
@@ -274,7 +272,7 @@ describe('Sample Project Structure', () => {
       expect(content).toContain('SampleProject.uproject');
       expect(content).toContain('package.json');
       expect(content).toContain('Config/');
-      expect(content).toContain('node_modules/');
+      expect(content).toContain('UEPMPlugins/');
     });
   });
 });

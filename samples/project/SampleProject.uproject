@@ -20,6 +20,6 @@
     }
   ],
   "AdditionalPluginDirectories": [
-    "node_modules"
+    "UEPMPlugins"
   ]
 }

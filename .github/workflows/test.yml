@@ -36,7 +36,7 @@ jobs:
         run: |
           # Test that the CLI can be invoked
           node packages/init/bin/uepm-init.js --help
-          node packages/validate/bin/uepm-validate.js --help
+          node packages/postinstall/bin/uepm-postinstall.js --help
 
       - name: Test sample project structure
         run: |

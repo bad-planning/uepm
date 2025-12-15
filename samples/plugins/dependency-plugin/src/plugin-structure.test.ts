@@ -63,7 +63,7 @@ describe('Dependency Plugin Structure', () => {
       
       // Verify @uepm/example-plugin dependency
       expect(packageJson.dependencies['@uepm/example-plugin']).toBeDefined();
-      expect(packageJson.dependencies['@uepm/example-plugin']).toMatch(/^\^?1\.0\.0$/);
+      expect(packageJson.dependencies['@uepm/example-plugin']).toMatch(/^\^?0\.1\.\d+$/);
     });
 
     it('should have correct package metadata', () => {

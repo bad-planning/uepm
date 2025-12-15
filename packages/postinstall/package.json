@@ -1,11 +1,11 @@
 {
-  "name": "@uepm/validate",
-  "version": "0.1.1",
-  "description": "Validation hook for checking Unreal Engine plugin compatibility",
+  "name": "@uepm/postinstall",
+  "version": "0.1.4",
+  "description": "Postinstall hooks for UEPM - plugin setup and validation",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "uepm-validate": "./bin/uepm-validate.js"
+    "uepm-postinstall": "./bin/uepm-postinstall.js"
   },
   "scripts": {
     "build": "tsc",
@@ -19,7 +19,7 @@
     "unreal-engine",
     "plugin",
     "uepm",
-    "validation"
+    "postinstall"
   ],
   "author": "",
   "license": "MIT",
@@ -37,7 +37,7 @@
     "fast-check": "^3.15.0"
   },
   "dependencies": {
-    "@uepm/core": "^0.1.2",
+    "@uepm/core": "^0.1.4",
     "semver": "^7.5.4"
   }
 }

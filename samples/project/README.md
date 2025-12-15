@@ -19,9 +19,9 @@ npx @uepm/init
 ```
 
 This command will:
-- Add `node_modules` to the `AdditionalPluginDirectories` in `SampleProject.uproject`
-- Create or update `package.json` with the postinstall validation hook
-- Install the `@uepm/validate` package as a dev dependency
+- Add `UEPMPlugins` to the `AdditionalPluginDirectories` in `SampleProject.uproject`
+- Create or update `package.json` with the postinstall setup and validation hooks
+- Install the `@uepm/init` and `@uepm/validate` packages as dev dependencies
 
 ### 2. Install Plugin Dependencies
 
@@ -34,8 +34,8 @@ npm install @uepm/example-plugin @uepm/dependency-plugin
 This will:
 - Download the plugins from the NPM registry
 - Install them in your project's `node_modules/@uepm/` directory
-- Run the postinstall hook to validate engine compatibility
-- Apply any existing patches via `patch-package`
+- Run the postinstall hook to create symlinks in `UEPMPlugins/` directory
+- Validate engine compatibility and apply any existing patches
 
 ### 3. Open the Project in Unreal Engine
 
@@ -131,10 +131,12 @@ sample-project/
 │       └── SampleProjectGameModeBase.cpp
 ├── Config/
 │   └── DefaultEngine.ini     # Engine configuration
-├── ../../node_modules/       # NPM-installed plugins (workspace level)
-│   └── @uepm/
-│       ├── example-plugin/   # Basic example plugin
-│       └── dependency-plugin/ # Plugin with dependencies
+├── UEPMPlugins/              # UEPM plugin symlinks (for Unreal Engine)
+│   ├── example-plugin/       # Symlink to example plugin
+│   └── dependency-plugin/    # Symlink to dependency plugin
+├── node_modules/@uepm/       # NPM-installed plugins
+│   ├── example-plugin/       # Actual plugin files
+│   └── dependency-plugin/    # Actual plugin files
 ├── patches/                  # patch-package modifications (created as needed)
 └── README.md                # This file
 ```
