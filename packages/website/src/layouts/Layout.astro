@@ -1,5 +1,9 @@
 ---
 import '../styles/global.css';
+import Navigation from '../components/Navigation.astro';
+import PerformanceMonitor from '../components/PerformanceMonitor.astro';
+import { getSiteConfig, initializeAnalytics } from '../config';
+import { performanceOptimizer } from '../config/performance';
 
 export interface Props {
   title: string;
@@ -8,14 +12,19 @@ export interface Props {
   canonicalUrl?: string;
 }
 
+const siteConfig = getSiteConfig();
+const analyticsScript = initializeAnalytics();
+const fontPreloadLinks = performanceOptimizer.getFontPreloadLinks();
+const criticalCSS = performanceOptimizer.getCriticalCSS();
+
 const { 
   title, 
-  description = "NPM for Unreal Engine Plugins - UEPM brings familiar package management workflows to Unreal Engine development.",
+  description = siteConfig.description,
   ogImage = "/og-image.png",
   canonicalUrl = Astro.url.href
 } = Astro.props;
 
-const siteTitle = title === "UEPM" ? title : `${title} | UEPM`;
+const siteTitle = title === siteConfig.title ? title : `${title} | UEPM`;
 ---
 
 <!doctype html>
@@ -54,7 +63,20 @@ const siteTitle = title === "UEPM" ? title : `${title} | UEPM`;
     <!-- Preload critical fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Preload critical font files -->
+    {fontPreloadLinks.map(({ href, as, type, crossorigin }) => (
+      <link rel="preload" href={href} as={as} type={type} crossorigin={crossorigin} />
+    ))}
+    
+    <!-- Load fonts with display swap for performance -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    
+    <!-- Critical CSS inline -->
+    <style set:html={criticalCSS}></style>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
     
     <!-- Page title -->
     <title>{siteTitle}</title>
@@ -65,16 +87,30 @@ const siteTitle = title === "UEPM" ? title : `${title} | UEPM`;
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
         "name": "UEPM",
-        "description": "NPM for Unreal Engine Plugins - Package manager for Unreal Engine development",
+        "description": siteConfig.description,
         "applicationCategory": "DeveloperApplication",
         "operatingSystem": "Windows, macOS, Linux",
         "offers": {
           "@type": "Offer",
           "price": "0",
           "priceCurrency": "USD"
-        }
+        },
+        "url": siteConfig.url,
+        "codeRepository": siteConfig.github.url
       }
     </script>
+    
+    <!-- Analytics -->
+    {analyticsScript && <Fragment set:html={analyticsScript} />}
+    
+    <!-- Resource hints for performance -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="//github.com" />
+    
+    <!-- Preload critical resources -->
+    <link rel="modulepreload" href="/src/components/Hero.astro" />
+    <link rel="modulepreload" href="/src/components/Features.astro" />
   </head>
   <body class="min-h-screen bg-white text-gray-900 antialiased">
     <!-- Skip to main content link for accessibility -->
@@ -83,10 +119,14 @@ const siteTitle = title === "UEPM" ? title : `${title} | UEPM`;
     </a>
     
     <div id="app" class="min-h-screen flex flex-col">
+      <Navigation currentPath={Astro.url.pathname} />
       <main id="main-content" class="flex-1" role="main">
         <slot />
       </main>
     </div>
+    
+    <!-- Performance monitoring -->
+    <PerformanceMonitor />
     
     <!-- Focus management script for accessibility -->
     <script>
