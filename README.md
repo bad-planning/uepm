@@ -1,14 +1,14 @@
-# UEPM - Unreal Engine Package Manager
+# UEPM - Unreal Engine Plugin Manager
 
-A modern package management system that brings the NPM ecosystem to Unreal Engine plugin development. UEPM allows you to distribute, install, and manage Unreal Engine plugins using familiar NPM workflows.
+A modern plugin management system that brings the NPM ecosystem to Unreal Engine plugin development. UEPM allows you to distribute, install, and manage Unreal Engine plugins using familiar NPM workflows.
 
 ## Features
 
 - **🚀 One-command setup**: Initialize any Unreal project with `npx @uepm/init`
 - **📦 NPM distribution**: Publish and install plugins using standard NPM commands
 - **🔍 Automatic validation**: Engine compatibility checking on every install
-- **🔗 Dependency management**: Plugins can depend on other plugins
-- **🩹 Patch support**: Full compatibility with patch-package for modifications
+- **🔗 Dependency management**: Plugins can depend on other plugins with automatic resolution
+- **🩹 Patch support**: Full compatibility with [patch-package](https://github.com/ds300/patch-package) for modifications to managed plugins
 - **⚡ Lightweight**: Only download what you need - init runs once via npx
 
 ## Quick Start

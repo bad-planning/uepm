@@ -55,8 +55,8 @@ export interface HomePageContent {
 
 export const homePageContent: HomePageContent = {
   hero: {
-    title: "NPM for Unreal Engine Plugins",
-    subtitle: "Bring familiar package management workflows to Unreal Engine development. Install, manage, and distribute plugins with the simplicity of NPM.",
+    title: "Unreal Engine's (missing) Plugin Manager",
+    subtitle: "Bring modern package management to Unreal Engine development. Install, manage, and distribute plugins with the simplicity and reliability of NPM.",
     primaryCTA: {
       text: "Get Started",
       href: "#get-started"
@@ -102,7 +102,7 @@ export const homePageContent: HomePageContent = {
     {
       icon: "Users",
       title: "Community Driven",
-      description: "Open source project built by and for the Unreal Engine community. Contribute and shape the future.",
+      description: "Open source project built by developers for developers. Contribute to making plugin management better for everyone.",
       learnMoreHref: "https://github.com/uepm/uepm/discussions"
     }
   ],
@@ -179,7 +179,7 @@ export const homePageContent: HomePageContent = {
   
   getStarted: {
     title: "Ready to Get Started?",
-    subtitle: "Transform your Unreal Engine plugin workflow in minutes. Install UEPM and experience the power of NPM-style package management.",
+    subtitle: "Transform your Unreal Engine plugin workflow in minutes. Install UEPM and experience modern package management for Unreal Engine.",
     quickStartCommand: "npx @uepm/init"
   }
 };
