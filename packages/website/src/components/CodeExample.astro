@@ -1,5 +1,5 @@
 ---
-import { createHighlighter } from 'shiki';
+import { getHighlighter } from '../utils/highlighter';
 
 export interface CodeStep {
   label: string;
@@ -16,11 +16,8 @@ export interface Props {
 
 const { title, description, steps } = Astro.props;
 
-// Initialize Shiki highlighter with themes and languages we need
-const highlighter = await createHighlighter({
-  themes: ['github-dark', 'github-light'],
-  langs: ['bash', 'json', 'typescript']
-});
+// Use the shared highlighter instance
+const highlighter = await getHighlighter();
 
 // Generate highlighted code for each step
 const highlightedSteps = steps.map((step, index) => {
@@ -73,40 +70,14 @@ const highlightedSteps = steps.map((step, index) => {
                   {step.label}
                 </h3>
               </div>
-              <div class="flex items-center space-x-2">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                  {step.language}
-                </span>
-                <button 
-                  class="copy-button inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
-                  data-copy-text={step.code}
-                  data-step-id={step.id}
-                  aria-label={`Copy ${step.language} code from step ${index + 1}`}
-                >
-                  <svg class="copy-icon w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                  </svg>
-                  <span class="copy-text">Copy</span>
-                </button>
-              </div>
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                {step.language}
+              </span>
             </div>
           </div>
 
-          <!-- Code block -->
-          <div class="relative">
-            <div 
-              class="code-block overflow-x-auto"
-              data-language={step.language}
-              set:html={step.highlighted}
-            />
-            
-            <!-- Mobile scroll indicator -->
-            <div class="absolute top-4 right-4 sm:hidden">
-              <div class="bg-gray-900/75 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
-                Scroll →
-              </div>
-            </div>
-          </div>
+          <!-- Code block - Pure Shiki output -->
+          <div set:html={step.highlighted} />
 
           <!-- Step explanation -->
           {step.explanation && (
@@ -123,182 +94,13 @@ const highlightedSteps = steps.map((step, index) => {
       ))}
     </div>
 
-    <!-- Success notification -->
-    <div 
-      id="copy-success-notification"
-      class="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 z-50"
-      role="alert"
-      aria-live="polite"
-    >
-      <div class="flex items-center">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        </svg>
-        <span>Code copied to clipboard!</span>
-      </div>
-    </div>
+
   </div>
 </section>
 
-<script>
-  // Copy to clipboard functionality with enhanced UX
-  document.addEventListener('DOMContentLoaded', () => {
-    const copyButtons = document.querySelectorAll('.copy-button');
-    const notification = document.getElementById('copy-success-notification');
-    
-    copyButtons.forEach(button => {
-      button.addEventListener('click', async (event) => {
-        event.preventDefault();
-        
-        const textToCopy = button.getAttribute('data-copy-text');
-        const stepId = button.getAttribute('data-step-id');
-        
-        if (!textToCopy) return;
-        
-        try {
-          // Try modern clipboard API first
-          await navigator.clipboard.writeText(textToCopy);
-          showCopySuccess(button as HTMLElement, notification);
-          
-        } catch (err) {
-          console.warn('Clipboard API failed, trying fallback:', err);
-          
-          // Fallback for older browsers or when clipboard API is not available
-          try {
-            const textArea = document.createElement('textarea');
-            textArea.value = textToCopy;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            
-            const successful = document.execCommand('copy');
-            document.body.removeChild(textArea);
-            
-            if (successful) {
-              showCopySuccess(button as HTMLElement, notification);
-            } else {
-              showCopyError(button as HTMLElement);
-            }
-            
-          } catch (fallbackErr) {
-            console.error('Fallback copy failed:', fallbackErr);
-            showCopyError(button as HTMLElement);
-          }
-        }
-      });
-    });
-    
-    function showCopySuccess(button: HTMLElement, notification: HTMLElement | null) {
-      // Update button state
-      const copyIcon = button.querySelector('.copy-icon');
-      const copyText = button.querySelector('.copy-text');
-      
-      if (copyIcon && copyText) {
-        // Store original content
-        const originalIcon = copyIcon.innerHTML;
-        const originalText = copyText.textContent;
-        
-        // Show success state
-        copyIcon.innerHTML = `
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-        `;
-        copyText.textContent = 'Copied!';
-        button.classList.add('bg-green-50', 'border-green-300', 'text-green-700');
-        
-        // Show notification
-        if (notification) {
-          notification.classList.remove('translate-x-full');
-          setTimeout(() => {
-            notification.classList.add('translate-x-full');
-          }, 3000);
-        }
-        
-        // Reset button after delay
-        setTimeout(() => {
-          copyIcon.innerHTML = originalIcon;
-          copyText.textContent = originalText;
-          button.classList.remove('bg-green-50', 'border-green-300', 'text-green-700');
-        }, 2000);
-      }
-    }
-    
-    function showCopyError(button: HTMLElement) {
-      const copyText = button.querySelector('.copy-text');
-      if (copyText) {
-        const originalText = copyText.textContent;
-        copyText.textContent = 'Failed';
-        button.classList.add('bg-red-50', 'border-red-300', 'text-red-700');
-        
-        setTimeout(() => {
-          copyText.textContent = originalText;
-          button.classList.remove('bg-red-50', 'border-red-300', 'text-red-700');
-        }, 2000);
-      }
-    }
-  });
-</script>
+
 
 <style>
-  /* Enhanced code block styling */
-  .code-block {
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-    font-size: 14px;
-    line-height: 1.5;
-    background: #0d1117;
-    color: #e6edf3;
-  }
-  
-  .code-block pre {
-    margin: 0;
-    padding: 1.5rem;
-    overflow-x: auto;
-    background: transparent;
-  }
-  
-  .code-block code {
-    background: transparent;
-    padding: 0;
-    font-size: inherit;
-    color: inherit;
-  }
-  
-  /* Responsive code block adjustments */
-  @media (max-width: 640px) {
-    .code-block {
-      font-size: 12px;
-    }
-    
-    .code-block pre {
-      padding: 1rem;
-    }
-    
-    /* Ensure horizontal scrolling works on mobile */
-    .code-block {
-      -webkit-overflow-scrolling: touch;
-    }
-  }
-  
-  /* Custom scrollbar for code blocks */
-  .code-block::-webkit-scrollbar {
-    height: 8px;
-  }
-  
-  .code-block::-webkit-scrollbar-track {
-    background: #21262d;
-  }
-  
-  .code-block::-webkit-scrollbar-thumb {
-    background: #484f58;
-    border-radius: 4px;
-  }
-  
-  .code-block::-webkit-scrollbar-thumb:hover {
-    background: #6e7681;
-  }
-  
   /* Step number animation */
   .code-step[data-step] {
     animation: slideInUp 0.6s ease-out;
@@ -326,40 +128,6 @@ const highlightedSteps = steps.map((step, index) => {
   @media (prefers-reduced-motion: reduce) {
     .code-step {
       animation: none;
-    }
-  }
-  
-  /* Copy button hover effects */
-  .copy-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-  
-  .copy-button:active {
-    transform: translateY(0);
-  }
-  
-  /* Language badge styling */
-  .code-step [class*="bg-gray-100"] {
-    font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-  }
-  
-  /* Focus styles for accessibility */
-  .copy-button:focus {
-    outline: none;
-    ring: 2px;
-    ring-color: #3b82f6;
-    ring-offset: 2px;
-  }
-  
-  /* High contrast mode support */
-  @media (prefers-contrast: high) {
-    .code-block {
-      border: 2px solid #ffffff;
-    }
-    
-    .copy-button {
-      border-width: 2px;
     }
   }
 </style>

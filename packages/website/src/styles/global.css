@@ -155,10 +155,19 @@
   }
   
   /* Code elements */
-  code {
-    @apply font-mono text-sm bg-gray-100 px-1.5 py-0.5 rounded;
+  /* code {
+    @apply px-1.5 py-0.5 rounded;
+  } */
+  
+  /* Code block components */
+  /* .code-block {
+    @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm;
     font-family: 'JetBrains Mono', 'Fira Code', Consolas, 'Courier New', monospace;
   }
+  
+  .code-inline {
+    @apply bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded font-mono text-sm;
+  } */
   
   pre {
     @apply font-mono text-sm overflow-x-auto;
@@ -241,16 +250,6 @@
   
   .card-hover {
     @apply transition-all duration-200 hover:shadow-md hover:border-gray-300;
-  }
-  
-  /* Code block components */
-  .code-block {
-    @apply bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto font-mono text-sm;
-    font-family: 'JetBrains Mono', 'Fira Code', Consolas, 'Courier New', monospace;
-  }
-  
-  .code-inline {
-    @apply bg-gray-100 text-gray-800 px-1.5 py-0.5 rounded font-mono text-sm;
   }
   
   /* Container components */
