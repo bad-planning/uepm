@@ -14,9 +14,9 @@
     "clean": "npm run clean --workspaces --if-present && rm -rf node_modules"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "typescript": "^5.3.3",
-    "vitest": "^1.1.0"
+    "@types/node": "^25.0.3",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=18.0.0"
