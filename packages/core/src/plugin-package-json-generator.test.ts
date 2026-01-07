@@ -566,4 +566,54 @@ describe('Plugin Package.json Validation - Property-Based Tests', () => {
       { numRuns: 100 }
     );
   });
+
+  /**
+   * Feature: init-plugin-support, Property 14: Conflict resolution
+   * Validates: Requirements 4.5
+   * 
+   * For any conflicting configuration in existing package.json, the init command should
+   * display warnings and preserve existing values unless force flag is used.
+   */
+  it('Property 14: handles conflicting configuration appropriately', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        packageJsonArbitrary(),
+        pluginPackageJsonArbitrary(),
+        async (existingPackageJson, pluginPackageJson) => {
+          // Create conflicting configuration by ensuring both have different values for same fields
+          const conflictingExisting = {
+            ...existingPackageJson,
+            main: 'existing-main.js',
+            description: 'Existing description',
+            author: 'Existing Author',
+            unreal: {
+              engineVersion: '4.27.0',
+              pluginName: 'ExistingPlugin'
+            }
+          };
+          
+          // Merge without force flag - should preserve existing values
+          const mergedWithoutForce = mergePluginPackageJson(conflictingExisting, pluginPackageJson, false);
+          
+          // Verify existing values are preserved when there are conflicts
+          expect(mergedWithoutForce.main).toBe(conflictingExisting.main);
+          expect(mergedWithoutForce.description).toBe(conflictingExisting.description);
+          expect(mergedWithoutForce.author).toBe(conflictingExisting.author);
+          expect(mergedWithoutForce.unreal).toEqual(conflictingExisting.unreal);
+          
+          // Merge with force flag - should overwrite with plugin values
+          const mergedWithForce = mergePluginPackageJson(conflictingExisting, pluginPackageJson, true);
+          
+          // Verify plugin values overwrite existing values when force is used
+          expect(mergedWithForce.main).toBe(pluginPackageJson.main);
+          expect(mergedWithForce.unreal).toEqual(pluginPackageJson.unreal);
+          
+          // Non-plugin specific fields should still be preserved even with force
+          expect(mergedWithForce.name).toBe(conflictingExisting.name);
+          expect(mergedWithForce.version).toBe(conflictingExisting.version);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
 });
