@@ -123,7 +123,7 @@ describe('Init Command', () => {
       const result = await init({ projectDir: tempDir });
 
       expect(result.success).toBe(false);
-      expect(result.message).toContain('No .uproject file found');
+      expect(result.message).toContain('No Unreal Engine project (.uproject) or plugin (.uplugin) files found');
       expect(result.message).toContain(tempDir);
     });
   });
@@ -304,6 +304,229 @@ describe('Init Command', () => {
               
               // Verify unreal field is preserved
               expect(modifiedPackageJson.unreal).toEqual(originalPackageJson.unreal);
+              
+            } finally {
+              // Clean up this iteration's temp directory
+              await fs.rm(testDir, { recursive: true, force: true });
+            }
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    /**
+     * Feature: init-plugin-support, Property 17: Context-appropriate feedback
+     * Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5
+     * 
+     * For any successful initialization, the init command should provide feedback that 
+     * correctly identifies the context (project vs plugin) and lists modified files
+     */
+    it('Property 17: Context-appropriate feedback', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.oneof(
+            // Project context generator
+            fc.record({
+              type: fc.constant('project' as const),
+              uprojectData: uprojectArbitrary(),
+              packageJsonData: fc.option(packageJsonArbitrary(), { nil: undefined }),
+            }),
+            // Plugin context generator  
+            fc.record({
+              type: fc.constant('plugin' as const),
+              upluginData: fc.record({
+                FileVersion: fc.constant(3),
+                FriendlyName: fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: undefined }),
+                Description: fc.option(fc.string({ minLength: 1, maxLength: 200 }), { nil: undefined }),
+                Version: fc.option(fc.integer({ min: 1, max: 999 }), { nil: undefined }),
+                VersionName: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
+                CreatedBy: fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: undefined }),
+                DocsURL: fc.option(fc.webUrl(), { nil: undefined }),
+              }),
+              packageJsonData: fc.option(
+                packageJsonArbitrary().filter(pkg => {
+                  // Filter out package.json with invalid unreal sections that would cause validation to fail
+                  if (pkg.unreal) {
+                    // If unreal section exists, it should not have undefined values that would cause validation failure
+                    return !(pkg.unreal.pluginName === undefined || pkg.unreal.engineVersion === undefined);
+                  }
+                  return true;
+                }), 
+                { nil: undefined }
+              ),
+              pluginName: fc.string({ minLength: 1, maxLength: 30 }).filter(name => /^[a-zA-Z][a-zA-Z0-9_]*$/.test(name)),
+            }).map(record => {
+              // Ensure plugin name consistency if package.json has unreal section
+              if (record.packageJsonData?.unreal?.pluginName) {
+                record.packageJsonData.unreal.pluginName = record.pluginName;
+              }
+              return record;
+            })
+          ),
+          async (testCase) => {
+            // Create a unique temp directory for this iteration
+            const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'uepm-prop17-test-'));
+            
+            try {
+              if (testCase.type === 'project') {
+                // Set up project context
+                const uprojectPath = path.join(testDir, 'TestProject.uproject');
+                await fs.writeFile(uprojectPath, JSON.stringify(testCase.uprojectData, null, 2));
+                
+                if (testCase.packageJsonData) {
+                  const packageJsonPath = path.join(testDir, 'package.json');
+                  await fs.writeFile(packageJsonPath, JSON.stringify(testCase.packageJsonData, null, 2));
+                }
+                
+                // Run init
+                const result = await init({ projectDir: testDir });
+                
+                // Verify success and context feedback
+                expect(result.success).toBe(true);
+                expect(result.context).toBe('project');
+                expect(result.message).toContain('project');
+                expect(result.filesCreated).toBeDefined();
+                expect(result.filesModified).toBeDefined();
+                
+                // Verify message contains file information
+                if (result.filesCreated && result.filesCreated.length > 0) {
+                  expect(result.message).toContain('Files created:');
+                  for (const file of result.filesCreated) {
+                    expect(result.message).toContain(file);
+                  }
+                }
+                
+                if (result.filesModified && result.filesModified.length > 0) {
+                  expect(result.message).toContain('Files modified:');
+                }
+                
+                // Verify next steps guidance for projects
+                expect(result.message).toContain('Next steps:');
+                expect(result.message).toContain('npm install');
+                
+              } else {
+                // Set up plugin context
+                const upluginPath = path.join(testDir, `${testCase.pluginName}.uplugin`);
+                await fs.writeFile(upluginPath, JSON.stringify(testCase.upluginData, null, 2));
+                
+                if (testCase.packageJsonData) {
+                  const packageJsonPath = path.join(testDir, 'package.json');
+                  await fs.writeFile(packageJsonPath, JSON.stringify(testCase.packageJsonData, null, 2));
+                }
+                
+                // Run init
+                const result = await init({ projectDir: testDir });
+                
+                // Verify success and context feedback
+                expect(result.success).toBe(true);
+                expect(result.context).toBe('plugin');
+                expect(result.message).toContain('plugin');
+                expect(result.message).toContain(testCase.pluginName);
+                expect(result.filesCreated).toBeDefined();
+                expect(result.filesModified).toBeDefined();
+                
+                // Verify message contains file information
+                if (result.filesCreated && result.filesCreated.length > 0) {
+                  expect(result.message).toContain('Files created:');
+                  for (const file of result.filesCreated) {
+                    expect(result.message).toContain(file);
+                  }
+                }
+                
+                if (result.filesModified && result.filesModified.length > 0) {
+                  expect(result.message).toContain('Files modified:');
+                }
+                
+                // Verify next steps guidance for plugins
+                expect(result.message).toContain('Next steps:');
+                expect(result.message).toContain('npm publish');
+              }
+              
+            } finally {
+              // Clean up this iteration's temp directory
+              await fs.rm(testDir, { recursive: true, force: true });
+            }
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
+
+    /**
+     * Feature: init-plugin-support, Property 20: Backward compatibility preservation
+     * Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5
+     * 
+     * For any project-only directory, the init command should produce identical results 
+     * to the previous implementation
+     */
+    it('Property 20: Backward compatibility preservation', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          uprojectArbitrary(),
+          fc.option(packageJsonArbitrary(), { nil: undefined }),
+          fc.boolean(), // force flag
+          async (uprojectData, packageJsonData, forceFlag) => {
+            // Create a unique temp directory for this iteration
+            const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'uepm-prop20-test-'));
+            
+            try {
+              // Set up project-only context (no plugin files)
+              const uprojectPath = path.join(testDir, 'TestProject.uproject');
+              await fs.writeFile(uprojectPath, JSON.stringify(uprojectData, null, 2));
+              
+              if (packageJsonData) {
+                const packageJsonPath = path.join(testDir, 'package.json');
+                await fs.writeFile(packageJsonPath, JSON.stringify(packageJsonData, null, 2));
+              }
+              
+              // Run init with the enhanced version
+              const result = await init({ projectDir: testDir, force: forceFlag });
+              
+              // Verify project context is detected
+              expect(result.context).toBe('project');
+              
+              // Verify success (should always succeed for valid project contexts)
+              expect(result.success).toBe(true);
+              
+              // Verify project-specific behavior
+              expect(result.message).toContain('project');
+              expect(result.filesCreated).toBeDefined();
+              expect(result.filesModified).toBeDefined();
+              
+              // Verify .uproject file was modified to include UEPMPlugins
+              const modifiedUproject = JSON.parse(await fs.readFile(uprojectPath, 'utf-8'));
+              expect(modifiedUproject.AdditionalPluginDirectories).toContain('UEPMPlugins');
+              
+              // Verify package.json exists and has postinstall script
+              const packageJsonPath = path.join(testDir, 'package.json');
+              const packageJsonExists = await fs.access(packageJsonPath).then(() => true).catch(() => false);
+              expect(packageJsonExists).toBe(true);
+              
+              const finalPackageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+              expect(finalPackageJson.scripts?.postinstall).toContain('uepm-postinstall');
+              expect(finalPackageJson.devDependencies?.['@uepm/postinstall']).toBeDefined();
+              
+              // Verify next steps guidance for projects
+              expect(result.message).toContain('Next steps:');
+              expect(result.message).toContain('npm install');
+              expect(result.message).toContain('Unreal Engine');
+              
+              // Verify no plugin-specific fields are added (but existing ones might be preserved for backward compatibility)
+              if (finalPackageJson.main) {
+                expect(finalPackageJson.main).not.toMatch(/\.uplugin$/);
+              }
+              
+              // If there was no original unreal section, there shouldn't be one now
+              // If there was an original unreal section, it might be preserved for backward compatibility
+              if (!packageJsonData?.unreal) {
+                expect(finalPackageJson.unreal?.pluginName).toBeUndefined();
+              }
+              
+              // Verify files array doesn't include plugin-specific patterns
+              if (finalPackageJson.files) {
+                expect(finalPackageJson.files.some((file: string) => file.endsWith('.uplugin'))).toBe(false);
+              }
               
             } finally {
               // Clean up this iteration's temp directory

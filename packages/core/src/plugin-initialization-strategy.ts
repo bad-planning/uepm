@@ -2,13 +2,8 @@ import * as path from 'path';
 import { promises as fs } from 'fs';
 import { InitContext, PackageJson } from './types';
 import { extractPluginMetadata, PluginMetadata } from './uplugin-manager';
-import { generatePluginPackageJson, mergePluginPackageJson, validatePluginPackageJson } from './plugin-package-json-generator';
+import { generatePluginPackageJsonWithDevConfig, mergePluginPackageJson, validatePluginPackageJson } from './plugin-package-json-generator';
 import * as packageJsonManager from './package-json-manager';
-import {
-  createFileNotFoundError,
-  createPermissionDeniedError,
-  createSchemaValidationError,
-} from './errors';
 
 export interface InitOptions {
   projectDir?: string;
@@ -51,8 +46,8 @@ export class PluginInitializationStrategy implements InitializationStrategy {
       // Step 1: Extract metadata from .uplugin file
       const metadata = await extractPluginMetadata(upluginPath);
       
-      // Step 2: Generate plugin-specific package.json configuration
-      const pluginPackageJson = generatePluginPackageJson(metadata, upluginPath, {
+      // Step 2: Generate plugin-specific package.json configuration with development features
+      const pluginPackageJson = await generatePluginPackageJsonWithDevConfig(metadata, upluginPath, {
         force: options.force,
         engineVersion: options.engineVersion
       });
@@ -225,9 +220,11 @@ export class PluginInitializationStrategy implements InitializationStrategy {
     // Provide next steps guidance
     message += `Next steps:\n`;
     message += `1. Review the generated package.json configuration\n`;
-    message += `2. Add any additional metadata (description, author, etc.)\n`;
-    message += `3. Run 'npm test' to validate your plugin structure\n`;
-    message += `4. Publish to NPM with 'npm publish' when ready\n`;
+    message += `2. Check the .gitignore file for appropriate exclusions\n`;
+    message += `3. Add any additional metadata (description, author, etc.)\n`;
+    message += `4. Run 'npm test' to validate your plugin structure\n`;
+    message += `5. Use 'npm run build' to build your plugin (if it has source modules)\n`;
+    message += `6. Publish to NPM with 'npm publish' when ready\n`;
     message += `\nFor more information, see the UEPM plugin development guide.`;
     
     return message;

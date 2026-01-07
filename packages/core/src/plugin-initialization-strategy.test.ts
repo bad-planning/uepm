@@ -18,6 +18,120 @@ describe('PluginInitializationStrategy', () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
+  describe('Plugin Development Configuration Integration', () => {
+    it('should create .gitignore file with appropriate patterns', async () => {
+      // Create a sample .uplugin file
+      const upluginContent: UPluginFile = {
+        FileVersion: 3,
+        Version: 1,
+        VersionName: '1.0.0',
+        FriendlyName: 'Test Plugin',
+        Description: 'A test plugin for UEPM',
+        CreatedBy: 'Test Author'
+      };
+
+      const upluginPath = path.join(tempDir, 'TestPlugin.uplugin');
+      await fs.writeFile(upluginPath, JSON.stringify(upluginContent, null, 2));
+
+      // Create Source directory to simulate a plugin with source modules
+      const sourceDir = path.join(tempDir, 'Source');
+      await fs.mkdir(sourceDir, { recursive: true });
+      await fs.writeFile(path.join(sourceDir, 'TestModule.cpp'), '// Test source file');
+
+      const context: InitContext = {
+        type: 'plugin',
+        primaryFile: upluginPath,
+        directory: tempDir,
+        pluginName: 'TestPlugin'
+      };
+
+      const options: InitOptions = {};
+
+      // Execute initialization
+      const result = await strategy.initialize(context, options);
+
+      // Verify result
+      expect(result.success).toBe(true);
+      expect(result.context).toBe('plugin');
+
+      // Verify .gitignore was created
+      const gitignorePath = path.join(tempDir, '.gitignore');
+      const gitignoreExists = await fs.access(gitignorePath).then(() => true).catch(() => false);
+      expect(gitignoreExists).toBe(true);
+
+      if (gitignoreExists) {
+        const gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
+        
+        // Verify essential patterns are included
+        expect(gitignoreContent).toContain('Binaries/');
+        expect(gitignoreContent).toContain('Intermediate/');
+        expect(gitignoreContent).toContain('node_modules/');
+        expect(gitignoreContent).toContain('.DS_Store');
+      }
+
+      // Verify package.json has enhanced build scripts for source modules
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
+      const packageJson: PackageJson = JSON.parse(packageJsonContent);
+
+      // Should have meaningful build scripts since Source directory exists
+      expect(packageJson.scripts?.build).toBeDefined();
+      expect(packageJson.scripts?.clean).toBeDefined();
+      expect(packageJson.scripts?.build).toContain('Building plugin with source modules');
+      expect(packageJson.scripts?.clean).toContain('Cleaning plugin build artifacts');
+    });
+
+    it('should handle content-only plugins appropriately', async () => {
+      // Create a sample .uplugin file for content-only plugin
+      const upluginContent: UPluginFile = {
+        FileVersion: 3,
+        Version: 1,
+        VersionName: '1.0.0',
+        FriendlyName: 'Content Plugin',
+        Description: 'A content-only plugin',
+        CanContainContent: true
+      };
+
+      const upluginPath = path.join(tempDir, 'ContentPlugin.uplugin');
+      await fs.writeFile(upluginPath, JSON.stringify(upluginContent, null, 2));
+
+      // Create Content directory but no Source directory
+      const contentDir = path.join(tempDir, 'Content');
+      await fs.mkdir(contentDir, { recursive: true });
+      await fs.writeFile(path.join(contentDir, 'TestAsset.uasset'), 'fake asset content');
+
+      const context: InitContext = {
+        type: 'plugin',
+        primaryFile: upluginPath,
+        directory: tempDir,
+        pluginName: 'ContentPlugin'
+      };
+
+      const options: InitOptions = {};
+
+      // Execute initialization
+      const result = await strategy.initialize(context, options);
+
+      // Verify result
+      expect(result.success).toBe(true);
+
+      // Verify package.json has appropriate scripts for content-only plugin
+      const packageJsonPath = path.join(tempDir, 'package.json');
+      const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
+      const packageJson: PackageJson = JSON.parse(packageJsonContent);
+
+      // Should have content-only build scripts
+      expect(packageJson.scripts?.build).toBeDefined();
+      expect(packageJson.scripts?.clean).toBeDefined();
+      expect(packageJson.scripts?.build).toContain('Content-only plugin');
+      expect(packageJson.scripts?.clean).toContain('Cleaning temporary files');
+
+      // Files array should include Content but not Source
+      expect(packageJson.files).toContain('Content/**/*');
+      expect(packageJson.files).not.toContain('Source/**/*');
+    });
+  });
+
   describe('Plugin Initialization', () => {
     it('should create package.json for new plugin', async () => {
       // Create a sample .uplugin file

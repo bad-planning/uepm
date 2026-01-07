@@ -1,4 +1,5 @@
 import * as path from 'path';
+import { promises as fs } from 'fs';
 import { PackageJson } from './types';
 import { PluginMetadata } from './uplugin-manager';
 
@@ -8,6 +9,149 @@ import { PluginMetadata } from './uplugin-manager';
 export interface PluginPackageJsonOptions {
   force?: boolean;
   engineVersion?: string;
+}
+
+/**
+ * Check if a plugin has source code modules by examining directory structure
+ * @param pluginDirectory - Directory containing the plugin
+ * @returns Promise<boolean> indicating if source modules exist
+ */
+async function hasSourceModules(pluginDirectory: string): Promise<boolean> {
+  try {
+    const sourceDir = path.join(pluginDirectory, 'Source');
+    const stats = await fs.stat(sourceDir);
+    return stats.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Generate gitignore patterns appropriate for Unreal Engine plugins
+ * @returns Array of gitignore patterns
+ */
+function generatePluginGitignorePatterns(): string[] {
+  return [
+    '# Unreal Engine plugin build artifacts',
+    'Binaries/',
+    'Intermediate/',
+    'DerivedDataCache/',
+    '*.tmp',
+    '*.log',
+    '',
+    '# Node.js dependencies',
+    'node_modules/',
+    'npm-debug.log*',
+    'yarn-debug.log*',
+    'yarn-error.log*',
+    '',
+    '# IDE files',
+    '.vscode/',
+    '.idea/',
+    '*.swp',
+    '*.swo',
+    '*~',
+    '',
+    '# OS generated files',
+    '.DS_Store',
+    '.DS_Store?',
+    '._*',
+    '.Spotlight-V100',
+    '.Trashes',
+    'ehthumbs.db',
+    'Thumbs.db'
+  ];
+}
+
+/**
+ * Create or update .gitignore file with plugin-appropriate patterns
+ * @param pluginDirectory - Directory containing the plugin
+ */
+async function createPluginGitignore(pluginDirectory: string): Promise<void> {
+  const gitignorePath = path.join(pluginDirectory, '.gitignore');
+  const patterns = generatePluginGitignorePatterns();
+  
+  try {
+    // Check if .gitignore already exists
+    const existingContent = await fs.readFile(gitignorePath, 'utf-8');
+    
+    // Only add patterns that don't already exist
+    const existingLines = existingContent.split('\n').map(line => line.trim());
+    const newPatterns = patterns.filter(pattern => 
+      pattern === '' || pattern.startsWith('#') || !existingLines.includes(pattern.trim())
+    );
+    
+    if (newPatterns.length > 0) {
+      const updatedContent = existingContent + '\n\n' + newPatterns.join('\n');
+      await fs.writeFile(gitignorePath, updatedContent);
+    }
+  } catch (error) {
+    // File doesn't exist, create new one
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      await fs.writeFile(gitignorePath, patterns.join('\n'));
+    } else {
+      throw error;
+    }
+  }
+}
+
+/**
+ * Generate build scripts based on plugin structure
+ * @param pluginDirectory - Directory containing the plugin
+ * @param pluginName - Name of the plugin
+ * @returns Object containing build scripts
+ */
+async function generateBuildScripts(pluginDirectory: string, pluginName: string): Promise<Record<string, string>> {
+  const hasSource = await hasSourceModules(pluginDirectory);
+  
+  if (hasSource) {
+    // Plugin has source modules - provide meaningful build scripts
+    return {
+      'build': 'echo "Building plugin with source modules..." && npm run test',
+      'clean': 'echo "Cleaning plugin build artifacts..." && rm -rf Binaries/ Intermediate/',
+      'prebuild': 'npm run clean',
+      'postbuild': 'echo "Plugin build completed successfully"'
+    };
+  } else {
+    // Plugin is content-only - provide basic scripts
+    return {
+      'build': 'echo "Content-only plugin - no build required"',
+      'clean': 'echo "Cleaning temporary files..." && find . -name "*.tmp" -delete || true'
+    };
+  }
+}
+
+/**
+ * Generate NPM publish configuration that excludes unnecessary files
+ * @param pluginDirectory - Directory containing the plugin
+ * @param upluginFileName - Name of the .uplugin file
+ * @returns Array of file patterns to include in NPM package
+ */
+async function generatePublishFiles(pluginDirectory: string, upluginFileName: string): Promise<string[]> {
+  const baseFiles = [
+    upluginFileName,
+    'README.md',
+    'LICENSE*',
+    'CHANGELOG*'
+  ];
+  
+  // Check which directories exist and include them conditionally
+  const conditionalDirs = ['Source', 'Content', 'Resources', 'Config'];
+  const existingDirs: string[] = [];
+  
+  for (const dir of conditionalDirs) {
+    try {
+      const dirPath = path.join(pluginDirectory, dir);
+      const stats = await fs.stat(dirPath);
+      if (stats.isDirectory()) {
+        existingDirs.push(`${dir}/**/*`);
+      }
+    } catch {
+      // Directory doesn't exist, skip it
+    }
+  }
+  
+  return [...baseFiles, ...existingDirs];
 }
 
 /**
@@ -23,6 +167,7 @@ export function generatePluginPackageJson(
   options: PluginPackageJsonOptions = {}
 ): PackageJson {
   const upluginFileName = path.basename(upluginPath);
+  const pluginDirectory = path.dirname(upluginPath);
   
   // Determine engine version compatibility
   const engineVersion = options.engineVersion || 
@@ -35,7 +180,7 @@ export function generatePluginPackageJson(
     .toLowerCase()
     .replace(/^-/, '');
   
-  // Standard plugin files to include in NPM package
+  // Standard plugin files to include in NPM package (will be refined by generatePublishFiles)
   const pluginFiles = [
     upluginFileName,
     'Source/**/*',
@@ -105,9 +250,7 @@ export function generatePluginPackageJson(
     '@types/node': '^20.0.0'
   };
   
-  // Add build scripts if plugin has source modules
-  // This will be determined by checking if Source directory exists
-  // For now, we'll add conditional build scripts
+  // Add build scripts (placeholder - will be enhanced by generateBuildScripts)
   packageJson.scripts = {
     ...packageJson.scripts,
     'build': 'echo "Build script - implement based on your plugin structure"',
@@ -115,6 +258,51 @@ export function generatePluginPackageJson(
   };
   
   return packageJson;
+}
+
+/**
+ * Enhanced plugin package.json generation with development configuration
+ * @param metadata - Plugin metadata extracted from .uplugin file
+ * @param upluginPath - Path to the .uplugin file
+ * @param options - Additional configuration options
+ * @returns Promise<PackageJson> object configured for plugin distribution with development features
+ */
+export async function generatePluginPackageJsonWithDevConfig(
+  metadata: PluginMetadata,
+  upluginPath: string,
+  options: PluginPackageJsonOptions = {}
+): Promise<PackageJson> {
+  const upluginFileName = path.basename(upluginPath);
+  const pluginDirectory = path.dirname(upluginPath);
+  
+  // Generate base package.json
+  const basePackageJson = generatePluginPackageJson(metadata, upluginPath, options);
+  
+  // Generate development-specific configurations
+  const [buildScripts, publishFiles] = await Promise.all([
+    generateBuildScripts(pluginDirectory, metadata.name),
+    generatePublishFiles(pluginDirectory, upluginFileName)
+  ]);
+  
+  // Create or update .gitignore file
+  try {
+    await createPluginGitignore(pluginDirectory);
+  } catch (error) {
+    // Log warning but don't fail the entire process
+    console.warn(`Warning: Could not create/update .gitignore: ${error}`);
+  }
+  
+  // Merge build scripts with existing scripts
+  const enhancedPackageJson: PackageJson = {
+    ...basePackageJson,
+    files: publishFiles,
+    scripts: {
+      ...basePackageJson.scripts,
+      ...buildScripts
+    }
+  };
+  
+  return enhancedPackageJson;
 }
 
 /**

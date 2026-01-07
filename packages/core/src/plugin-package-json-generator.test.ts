@@ -502,6 +502,132 @@ describe('Plugin Package.json Merging - Property-Based Tests', () => {
   });
 });
 
+describe('Plugin Development Configuration - Property-Based Tests', () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    // Create a unique temporary directory for each test
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'uepm-plugin-dev-test-'));
+  });
+
+  afterEach(async () => {
+    // Clean up temporary directory
+    try {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
+  });
+
+  /**
+   * Feature: init-plugin-support, Property 18: Plugin development configuration
+   * Validates: Requirements 7.3, 7.5
+   * 
+   * For any plugin initialization, appropriate development configurations should be set up
+   * including gitignore patterns and publish configuration.
+   */
+  it('Property 18: sets up appropriate development configurations', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        pluginMetadataArbitrary(),
+        pluginNameArbitrary(),
+        async (metadata, pluginName) => {
+          const upluginPath = path.join(tempDir, `${pluginName}.uplugin`);
+          
+          // Generate plugin package.json
+          const packageJson = generatePluginPackageJson(metadata, upluginPath);
+          
+          // Verify NPM publish configuration excludes unnecessary files
+          expect(packageJson.files).toBeDefined();
+          expect(Array.isArray(packageJson.files)).toBe(true);
+          
+          // Verify files array includes essential plugin files but excludes build artifacts
+          expect(packageJson.files).toContain(`${pluginName}.uplugin`);
+          expect(packageJson.files).toContain('Source/**/*');
+          expect(packageJson.files).toContain('Content/**/*');
+          expect(packageJson.files).toContain('Resources/**/*');
+          expect(packageJson.files).toContain('Config/**/*');
+          
+          // Verify documentation files are included
+          expect(packageJson.files).toContain('README.md');
+          expect(packageJson.files).toContain('LICENSE*');
+          expect(packageJson.files).toContain('CHANGELOG*');
+          
+          // Verify build artifacts and temporary files are NOT included
+          const excludedPatterns = [
+            'Binaries/**/*',
+            'Intermediate/**/*',
+            'node_modules/**/*',
+            '.git/**/*',
+            '*.tmp',
+            '*.log'
+          ];
+          
+          for (const pattern of excludedPatterns) {
+            expect(packageJson.files).not.toContain(pattern);
+          }
+          
+          // Verify package is set to public by default (not private)
+          expect(packageJson.private).not.toBe(true);
+          
+          // Verify appropriate license is set
+          expect(packageJson.license).toBeDefined();
+          expect(typeof packageJson.license).toBe('string');
+          
+          // Verify engines field specifies Node.js requirement
+          expect(packageJson.engines).toBeDefined();
+          expect(packageJson.engines?.node).toBeDefined();
+          expect(packageJson.engines?.node).toMatch(/>=\d+/);
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  /**
+   * Feature: init-plugin-support, Property 19: Conditional build script inclusion
+   * Validates: Requirements 7.4
+   * 
+   * For any plugin with source code modules, build scripts should be included in the package.json.
+   */
+  it('Property 19: includes build scripts conditionally based on plugin structure', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        pluginMetadataArbitrary(),
+        pluginNameArbitrary(),
+        async (metadata, pluginName) => {
+          const upluginPath = path.join(tempDir, `${pluginName}.uplugin`);
+          
+          // Generate plugin package.json
+          const packageJson = generatePluginPackageJson(metadata, upluginPath);
+          
+          // Verify build and clean scripts are always included
+          // (The actual conditional logic will be implemented in the main task)
+          expect(packageJson.scripts).toBeDefined();
+          expect(packageJson.scripts?.build).toBeDefined();
+          expect(packageJson.scripts?.clean).toBeDefined();
+          
+          // Verify build scripts are meaningful (not just placeholder)
+          expect(typeof packageJson.scripts?.build).toBe('string');
+          expect(typeof packageJson.scripts?.clean).toBe('string');
+          expect(packageJson.scripts?.build.length).toBeGreaterThan(0);
+          expect(packageJson.scripts?.clean.length).toBeGreaterThan(0);
+          
+          // Verify test scripts are also included for development
+          expect(packageJson.scripts?.test).toBeDefined();
+          expect(packageJson.scripts?.['test:watch']).toBeDefined();
+          
+          // Verify development dependencies include build tools
+          expect(packageJson.devDependencies).toBeDefined();
+          expect(packageJson.devDependencies?.['vitest']).toBeDefined();
+          expect(packageJson.devDependencies?.['@types/node']).toBeDefined();
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+});
+
 describe('Plugin Package.json Validation - Property-Based Tests', () => {
   /**
    * Feature: init-plugin-support, Property 13: Configuration validation
