@@ -10,17 +10,17 @@
   - **Property 8: Context detection accuracy**
   - **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5, 2.6**
 
-- [ ] 2. Implement plugin metadata extraction
+- [x] 2. Implement plugin metadata extraction
   - Create uplugin file parser for JSON metadata
   - Extract plugin name, version, description, author, and other metadata
   - Handle missing or invalid metadata gracefully
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 2.1 Write property test for metadata extraction
+- [x] 2.1 Write property test for metadata extraction
   - **Property 15: Uplugin metadata round trip**
   - **Validates: Requirements 5.1, 5.2, 5.3, 5.4**
 
-- [ ] 2.2 Write property test for invalid JSON handling
+- [x] 2.2 Write property test for invalid JSON handling
   - **Property 16: Invalid JSON error handling**
   - **Validates: Requirements 5.5**
 

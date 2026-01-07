@@ -2,7 +2,7 @@
  * Schema validation utilities for UEPM
  */
 
-import { UProjectFile, PackageJson } from './types';
+import { UProjectFile, PackageJson, UPluginFile } from './types';
 
 export interface ValidationResult {
   valid: boolean;
@@ -155,12 +155,141 @@ export function validatePackageJsonSchema(obj: unknown): ValidationResult {
 }
 
 /**
+ * Validate that an object conforms to the UPluginFile schema
+ * @param obj - Object to validate
+ * @returns Validation result
+ */
+export function validateUPluginSchema(obj: unknown): ValidationResult {
+  const result: ValidationResult = {
+    valid: true,
+    missingFields: [],
+    errors: [],
+  };
+
+  // Check if obj is an object
+  if (typeof obj !== 'object' || obj === null) {
+    result.valid = false;
+    result.errors.push('UPlugin file must be a JSON object');
+    return result;
+  }
+
+  const plugin = obj as Record<string, unknown>;
+
+  // Check required field: FileVersion
+  if (plugin.FileVersion === undefined) {
+    result.valid = false;
+    result.missingFields.push('FileVersion');
+  } else if (typeof plugin.FileVersion !== 'number') {
+    result.valid = false;
+    result.errors.push('FileVersion must be a number');
+  }
+
+  // Validate optional fields if present
+  if (plugin.Version !== undefined && typeof plugin.Version !== 'number') {
+    result.valid = false;
+    result.errors.push('Version must be a number');
+  }
+
+  if (plugin.VersionName !== undefined && typeof plugin.VersionName !== 'string') {
+    result.valid = false;
+    result.errors.push('VersionName must be a string');
+  }
+
+  if (plugin.FriendlyName !== undefined && typeof plugin.FriendlyName !== 'string') {
+    result.valid = false;
+    result.errors.push('FriendlyName must be a string');
+  }
+
+  if (plugin.Description !== undefined && typeof plugin.Description !== 'string') {
+    result.valid = false;
+    result.errors.push('Description must be a string');
+  }
+
+  if (plugin.Category !== undefined && typeof plugin.Category !== 'string') {
+    result.valid = false;
+    result.errors.push('Category must be a string');
+  }
+
+  if (plugin.CreatedBy !== undefined && typeof plugin.CreatedBy !== 'string') {
+    result.valid = false;
+    result.errors.push('CreatedBy must be a string');
+  }
+
+  if (plugin.CreatedByURL !== undefined && typeof plugin.CreatedByURL !== 'string') {
+    result.valid = false;
+    result.errors.push('CreatedByURL must be a string');
+  }
+
+  if (plugin.DocsURL !== undefined && typeof plugin.DocsURL !== 'string') {
+    result.valid = false;
+    result.errors.push('DocsURL must be a string');
+  }
+
+  if (plugin.MarketplaceURL !== undefined && typeof plugin.MarketplaceURL !== 'string') {
+    result.valid = false;
+    result.errors.push('MarketplaceURL must be a string');
+  }
+
+  if (plugin.SupportURL !== undefined && typeof plugin.SupportURL !== 'string') {
+    result.valid = false;
+    result.errors.push('SupportURL must be a string');
+  }
+
+  if (plugin.EngineVersion !== undefined && typeof plugin.EngineVersion !== 'string') {
+    result.valid = false;
+    result.errors.push('EngineVersion must be a string');
+  }
+
+  if (plugin.CanContainContent !== undefined && typeof plugin.CanContainContent !== 'boolean') {
+    result.valid = false;
+    result.errors.push('CanContainContent must be a boolean');
+  }
+
+  if (plugin.IsBetaVersion !== undefined && typeof plugin.IsBetaVersion !== 'boolean') {
+    result.valid = false;
+    result.errors.push('IsBetaVersion must be a boolean');
+  }
+
+  if (plugin.IsExperimentalVersion !== undefined && typeof plugin.IsExperimentalVersion !== 'boolean') {
+    result.valid = false;
+    result.errors.push('IsExperimentalVersion must be a boolean');
+  }
+
+  if (plugin.Installed !== undefined && typeof plugin.Installed !== 'boolean') {
+    result.valid = false;
+    result.errors.push('Installed must be a boolean');
+  }
+
+  if (plugin.Modules !== undefined && !Array.isArray(plugin.Modules)) {
+    result.valid = false;
+    result.errors.push('Modules must be an array');
+  }
+
+  if (plugin.Plugins !== undefined && !Array.isArray(plugin.Plugins)) {
+    result.valid = false;
+    result.errors.push('Plugins must be an array');
+  }
+
+  return result;
+}
+
+/**
  * Check if a UProjectFile is valid
  * @param project - UProjectFile to validate
  * @returns True if valid
  */
 export function isValidUProject(project: unknown): project is UProjectFile {
   const result = validateUProjectSchema(project);
+  return result.valid;
+}
+
+/**
+ * Check if a UPluginFile is valid
+ * @param plugin - UPluginFile to validate
+ * @returns True if valid
+ */
+export function isValidUPlugin(plugin: unknown): plugin is UPluginFile {
+  const result = validateUPluginSchema(plugin);
   return result.valid;
 }
 
