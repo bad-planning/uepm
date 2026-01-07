@@ -4,7 +4,7 @@
  */
 
 import * as fc from 'fast-check';
-import { UProjectFile, Module, PluginReference, PackageJson } from './types';
+import { UProjectFile, Module, PluginReference, PackageJson, UPluginFile, UPluginModule, PluginDependency, InitContext } from './types';
 
 /**
  * Generator for valid Unreal Engine version strings
@@ -253,4 +253,159 @@ export const directoryPathArbitrary = (): fc.Arbitrary<string> => {
       { minLength: 1, maxLength: 3 }
     ).map(parts => parts.join('/'))
   );
+};
+
+/**
+ * Generator for valid UPluginModule objects
+ */
+export const upluginModuleArbitrary = (): fc.Arbitrary<UPluginModule> => {
+  return fc.record({
+    Name: fc.string({ minLength: 1, maxLength: 50 }).filter(s => /^[A-Za-z][A-Za-z0-9_]*$/.test(s)),
+    Type: fc.constantFrom('Runtime', 'Editor', 'Developer', 'Program', 'ClientOnly', 'ServerOnly'),
+    LoadingPhase: fc.option(
+      fc.constantFrom(
+        'Default',
+        'PreDefault',
+        'PostConfigInit',
+        'PostSplashScreen',
+        'PreEarlyLoadingScreen',
+        'PreLoadingScreen',
+        'PostEngineInit'
+      ),
+      { nil: undefined }
+    ),
+    AdditionalDependencies: fc.option(
+      fc.array(fc.string({ minLength: 1, maxLength: 50 }), { minLength: 0, maxLength: 10 }),
+      { nil: undefined }
+    ),
+    WhitelistPlatforms: fc.option(
+      fc.array(
+        fc.constantFrom('Win64', 'Mac', 'Linux', 'Android', 'iOS', 'HoloLens'),
+        { minLength: 1, maxLength: 6 }
+      ),
+      { nil: undefined }
+    ),
+    BlacklistPlatforms: fc.option(
+      fc.array(
+        fc.constantFrom('Win64', 'Mac', 'Linux', 'Android', 'iOS', 'HoloLens'),
+        { minLength: 1, maxLength: 6 }
+      ),
+      { nil: undefined }
+    )
+  });
+};
+
+/**
+ * Generator for valid PluginDependency objects
+ */
+export const pluginDependencyArbitrary = (): fc.Arbitrary<PluginDependency> => {
+  return fc.record({
+    Name: fc.string({ minLength: 1, maxLength: 50 }).filter(s => /^[A-Za-z][A-Za-z0-9_]*$/.test(s)),
+    Enabled: fc.boolean(),
+    Optional: fc.option(fc.boolean(), { nil: undefined })
+  });
+};
+
+/**
+ * Generator for valid UPluginFile objects
+ * Generates random but valid .uplugin file structures
+ */
+export const upluginArbitrary = (): fc.Arbitrary<UPluginFile> => {
+  return fc.record({
+    FileVersion: fc.constantFrom(3, 4),
+    Version: fc.option(fc.integer({ min: 1, max: 100 }), { nil: undefined }),
+    VersionName: fc.option(semverArbitrary(), { nil: undefined }),
+    FriendlyName: fc.option(
+      fc.string({ minLength: 1, maxLength: 100 }),
+      { nil: undefined }
+    ),
+    Description: fc.option(
+      fc.string({ minLength: 1, maxLength: 500 }),
+      { nil: undefined }
+    ),
+    Category: fc.option(
+      fc.constantFrom('Animation', 'Audio', 'Blueprint', 'Content', 'Developer', 'Editor', 'Gameplay', 'Rendering', 'Scripting', 'Virtual Reality'),
+      { nil: undefined }
+    ),
+    CreatedBy: fc.option(
+      fc.string({ minLength: 1, maxLength: 100 }),
+      { nil: undefined }
+    ),
+    CreatedByURL: fc.option(fc.webUrl(), { nil: undefined }),
+    DocsURL: fc.option(fc.webUrl(), { nil: undefined }),
+    MarketplaceURL: fc.option(fc.webUrl(), { nil: undefined }),
+    SupportURL: fc.option(fc.webUrl(), { nil: undefined }),
+    EngineVersion: fc.option(engineVersionArbitrary(), { nil: undefined }),
+    CanContainContent: fc.option(fc.boolean(), { nil: undefined }),
+    IsBetaVersion: fc.option(fc.boolean(), { nil: undefined }),
+    IsExperimentalVersion: fc.option(fc.boolean(), { nil: undefined }),
+    Installed: fc.option(fc.boolean(), { nil: undefined }),
+    Modules: fc.option(
+      fc.array(upluginModuleArbitrary(), { minLength: 0, maxLength: 10 }),
+      { nil: undefined }
+    ),
+    Plugins: fc.option(
+      fc.array(pluginDependencyArbitrary(), { minLength: 0, maxLength: 20 }),
+      { nil: undefined }
+    )
+  });
+};
+
+/**
+ * Generator for plugin names (derived from .uplugin filenames)
+ */
+export const pluginNameArbitrary = (): fc.Arbitrary<string> => {
+  return fc.string({ minLength: 1, maxLength: 50 })
+    .filter(s => /^[A-Za-z][A-Za-z0-9_]*$/.test(s));
+};
+
+/**
+ * Generator for InitContext objects
+ */
+export const initContextArbitrary = (): fc.Arbitrary<InitContext> => {
+  return fc.oneof(
+    // Project context
+    fc.record({
+      type: fc.constant('project' as const),
+      primaryFile: fc.string({ minLength: 1, maxLength: 100 }).map(s => s + '.uproject'),
+      directory: directoryPathArbitrary()
+    }),
+    // Plugin context
+    fc.record({
+      type: fc.constant('plugin' as const),
+      primaryFile: fc.string({ minLength: 1, maxLength: 100 }).map(s => s + '.uplugin'),
+      directory: directoryPathArbitrary(),
+      pluginName: pluginNameArbitrary()
+    })
+  );
+};
+
+/**
+ * Generator for directory configurations for context detection testing
+ */
+export const directoryConfigArbitrary = (): fc.Arbitrary<{
+  uprojectFiles: string[];
+  upluginFiles: string[];
+  otherFiles: string[];
+}> => {
+  return fc.record({
+    uprojectFiles: fc.array(
+      fc.string({ minLength: 1, maxLength: 30 })
+        .filter(s => /^[A-Za-z][A-Za-z0-9_]*$/.test(s))
+        .map(s => s + '.uproject'),
+      { minLength: 0, maxLength: 3 }
+    ),
+    upluginFiles: fc.array(
+      fc.string({ minLength: 1, maxLength: 30 })
+        .filter(s => /^[A-Za-z][A-Za-z0-9_]*$/.test(s))
+        .map(s => s + '.uplugin'),
+      { minLength: 0, maxLength: 3 }
+    ),
+    otherFiles: fc.array(
+      fc.string({ minLength: 1, maxLength: 30 })
+        .filter(s => !s.endsWith('.uproject') && !s.endsWith('.uplugin'))
+        .filter(s => !/[<>:"|?*\/\\]/.test(s) && s.trim().length > 0 && s.trim() === s),
+      { minLength: 0, maxLength: 5 }
+    )
+  });
 };

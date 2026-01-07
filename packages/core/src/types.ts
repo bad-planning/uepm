@@ -39,3 +39,53 @@ export interface PackageJson {
   };
   [key: string]: unknown; // Allow additional fields
 }
+
+export interface UPluginFile {
+  FileVersion: number;
+  Version?: number;
+  VersionName?: string;
+  FriendlyName?: string;
+  Description?: string;
+  Category?: string;
+  CreatedBy?: string;
+  CreatedByURL?: string;
+  DocsURL?: string;
+  MarketplaceURL?: string;
+  SupportURL?: string;
+  EngineVersion?: string;
+  CanContainContent?: boolean;
+  IsBetaVersion?: boolean;
+  IsExperimentalVersion?: boolean;
+  Installed?: boolean;
+  Modules?: UPluginModule[];
+  Plugins?: PluginDependency[];
+  [key: string]: unknown; // Allow additional fields
+}
+
+export interface UPluginModule {
+  Name: string;
+  Type: string;
+  LoadingPhase?: string;
+  AdditionalDependencies?: string[];
+  WhitelistPlatforms?: string[];
+  BlacklistPlatforms?: string[];
+}
+
+export interface PluginDependency {
+  Name: string;
+  Enabled: boolean;
+  Optional?: boolean;
+}
+
+export interface InitContext {
+  type: 'project' | 'plugin';
+  primaryFile: string;
+  directory: string;
+  pluginName?: string; // Only for plugin context
+}
+
+export interface ContextDetectionResult {
+  context?: InitContext;
+  error?: string;
+  warnings?: string[];
+}

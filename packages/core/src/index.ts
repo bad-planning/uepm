@@ -6,3 +6,4 @@ export * from './package-json-manager';
 export * from './errors';
 export * from './validation';
 export * from './test-generators';
+export * from './context-detector';
