@@ -404,7 +404,8 @@ export const directoryConfigArbitrary = (): fc.Arbitrary<{
     otherFiles: fc.array(
       fc.string({ minLength: 1, maxLength: 30 })
         .filter(s => !s.endsWith('.uproject') && !s.endsWith('.uplugin'))
-        .filter(s => !/[<>:"|?*\/\\]/.test(s) && s.trim().length > 0 && s.trim() === s),
+        .filter(s => !/[<>:"|?*\/\\]/.test(s) && s.trim().length > 0 && s.trim() === s)
+        .filter(s => s !== '.' && s !== '..' && !s.startsWith('./')), // Exclude directory references
       { minLength: 0, maxLength: 5 }
     )
   });
