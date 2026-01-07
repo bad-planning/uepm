@@ -360,6 +360,122 @@ export const pluginNameArbitrary = (): fc.Arbitrary<string> => {
 };
 
 /**
+ * Generator for PluginMetadata objects
+ */
+export const pluginMetadataArbitrary = (): fc.Arbitrary<import('./uplugin-manager').PluginMetadata> => {
+  return fc.record({
+    name: pluginNameArbitrary(),
+    version: semverArbitrary(),
+    friendlyName: fc.option(
+      fc.string({ minLength: 1, maxLength: 100 }),
+      { nil: undefined }
+    ),
+    description: fc.option(
+      fc.string({ minLength: 1, maxLength: 500 }),
+      { nil: undefined }
+    ),
+    author: fc.option(
+      fc.string({ minLength: 1, maxLength: 100 }),
+      { nil: undefined }
+    ),
+    homepage: fc.option(fc.webUrl(), { nil: undefined }),
+    engineVersion: fc.option(engineVersionArbitrary(), { nil: undefined })
+  });
+};
+
+/**
+ * Generator for plugin package.json configurations
+ */
+export const pluginPackageJsonArbitrary = (): fc.Arbitrary<PackageJson> => {
+  return fc.record({
+    name: packageNameArbitrary(),
+    version: semverArbitrary(),
+    description: fc.option(
+      fc.string({ minLength: 1, maxLength: 200 }),
+      { nil: undefined }
+    ),
+    main: fc.string({ minLength: 1, maxLength: 50 })
+      .filter(s => /^[A-Za-z][A-Za-z0-9_]*$/.test(s))
+      .map(s => s + '.uplugin'),
+    files: fc.array(
+      fc.oneof(
+        // Include the .uplugin file
+        fc.string({ minLength: 1, maxLength: 50 })
+          .filter(s => /^[A-Za-z][A-Za-z0-9_]*$/.test(s))
+          .map(s => s + '.uplugin'),
+        // Include standard plugin directories
+        fc.constantFrom('Source/**/*', 'Content/**/*', 'Resources/**/*', 'Config/**/*'),
+        // Include other valid file patterns
+        fc.string({ minLength: 1, maxLength: 50 })
+          .filter(s => s.trim().length > 0 && !/^\s+$/.test(s))
+      ),
+      { minLength: 1, maxLength: 10 }
+    ).map(files => {
+      // Ensure at least one .uplugin file is included
+      const hasUpluginFile = files.some(file => file.endsWith('.uplugin'));
+      if (!hasUpluginFile) {
+        return ['Plugin.uplugin', ...files];
+      }
+      return files;
+    }),
+    keywords: fc.array(
+      fc.oneof(
+        // Include Unreal Engine related keywords
+        fc.constantFrom('unreal-engine', 'ue4', 'ue5', 'plugin', 'gamedev'),
+        // Include other valid keywords
+        fc.string({ minLength: 1, maxLength: 20 })
+          .filter(s => s.trim().length > 0 && !/^\s+$/.test(s))
+      ),
+      { minLength: 1, maxLength: 10 }
+    ).map(keywords => {
+      // Ensure at least one Unreal Engine related keyword is included
+      const hasUnrealKeyword = keywords.some(keyword => 
+        keyword.includes('unreal') || keyword.includes('ue4') || keyword.includes('ue5')
+      );
+      if (!hasUnrealKeyword) {
+        return ['unreal-engine', ...keywords];
+      }
+      return keywords;
+    }),
+    scripts: fc.option(
+      fc.dictionary(
+        scriptNameArbitrary(),
+        fc.string({ minLength: 1, maxLength: 100 }),
+        { minKeys: 0, maxKeys: 10 }
+      ),
+      { nil: undefined }
+    ),
+    devDependencies: fc.option(
+      fc.dictionary(
+        packageNameArbitrary(),
+        semverRangeArbitrary(),
+        { minKeys: 0, maxKeys: 15 }
+      ),
+      { nil: undefined }
+    ),
+    unreal: fc.record({
+      engineVersion: semverRangeArbitrary(),
+      pluginName: pluginNameArbitrary()
+    }),
+    engines: fc.option(
+      fc.record({
+        node: fc.string({ minLength: 1, maxLength: 20 })
+      }),
+      { nil: undefined }
+    ),
+    author: fc.option(
+      fc.string({ minLength: 1, maxLength: 100 }),
+      { nil: undefined }
+    ),
+    homepage: fc.option(fc.webUrl(), { nil: undefined }),
+    license: fc.option(
+      fc.constantFrom('MIT', 'Apache-2.0', 'GPL-3.0', 'BSD-3-Clause', 'ISC'),
+      { nil: undefined }
+    )
+  });
+};
+
+/**
  * Generator for InitContext objects
  */
 export const initContextArbitrary = (): fc.Arbitrary<InitContext> => {

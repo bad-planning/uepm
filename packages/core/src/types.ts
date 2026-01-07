@@ -29,10 +29,20 @@ export interface PackageJson {
   name: string;
   version: string;
   description?: string;
+  main?: string;
+  files?: string[];
+  keywords?: string[];
   private?: boolean;
   scripts?: Record<string, string>;
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
+  engines?: {
+    node?: string;
+    npm?: string;
+  };
+  author?: string;
+  homepage?: string;
+  license?: string;
   unreal?: {
     engineVersion?: string;
     pluginName?: string;
