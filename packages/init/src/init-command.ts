@@ -7,7 +7,7 @@ import { UEPMError, formatErrorMessage } from '@uepm/core';
  */
 export class InitCommand implements Command {
   name = 'init';
-  description = 'Initialize Unreal Engine project for NPM plugin support';
+  description = 'Initialize Unreal Engine project or plugin for NPM package management';
 
   async execute(_args: string[], options: Record<string, any>): Promise<number> {
     const initOptions: InitOptions = {

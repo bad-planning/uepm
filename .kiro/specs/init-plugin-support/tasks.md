@@ -119,7 +119,7 @@
   - **Property 19: Conditional build script inclusion**
   - **Validates: Requirements 7.4**
 
-- [ ] 7. Update CLI and command interfaces
+- [x] 7. Update CLI and command interfaces
   - Enhance CLI help text to mention plugin support
   - Update command descriptions and examples
   - Ensure all existing command-line flags work with both contexts

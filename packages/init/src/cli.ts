@@ -13,10 +13,10 @@ async function main() {
   // Configure the CLI
   program
     .name('uepm-init')
-    .description('Initialize Unreal Engine project for NPM plugin support')
+    .description('Initialize Unreal Engine project or plugin for NPM package management')
     .version('0.1.0')
     .option('-f, --force', 'Force reinitialization even if already initialized')
-    .option('-d, --project-dir <path>', 'Project directory (defaults to current directory)')
+    .option('-d, --project-dir <path>', 'Project or plugin directory (defaults to current directory)')
     .action(async (options) => {
       const initOptions: InitOptions = {
         projectDir: options.projectDir || process.cwd(),
@@ -40,7 +40,15 @@ async function main() {
         console.error(`Error: ${message}`);
         process.exit(1);
       }
-    });
+    })
+    .addHelpText('after', `
+Examples:
+  $ uepm-init                          Initialize project or plugin in current directory
+  $ uepm-init -d ./MyProject           Initialize an Unreal Engine project
+  $ uepm-init -d ./MyPlugin            Initialize an Unreal Engine plugin for NPM distribution
+  $ uepm-init --force                  Force reinitialization of project or plugin
+
+The command automatically detects whether the directory contains a .uproject (project) or .uplugin (plugin) file and performs the appropriate initialization.`);
 
   // Parse arguments
   await program.parseAsync(process.argv);

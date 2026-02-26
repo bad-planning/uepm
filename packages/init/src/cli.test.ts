@@ -128,7 +128,15 @@ describe('CLI Framework', () => {
       const initCommand = new InitCommand();
 
       expect(initCommand.name).toBe('init');
-      expect(initCommand.description).toBe('Initialize Unreal Engine project for NPM plugin support');
+      expect(initCommand.description).toBe('Initialize Unreal Engine project or plugin for NPM package management');
+    });
+
+    it('should mention both project and plugin support in description', async () => {
+      const { InitCommand } = await import('./init-command');
+      const initCommand = new InitCommand();
+
+      expect(initCommand.description).toContain('project');
+      expect(initCommand.description).toContain('plugin');
     });
   });
 
@@ -140,7 +148,7 @@ describe('CLI Framework', () => {
       
       const mockCommand: Command = {
         name: 'init',
-        description: 'Initialize Unreal Engine project for NPM plugin support',
+        description: 'Initialize Unreal Engine project or plugin for NPM package management',
         execute: vi.fn().mockResolvedValue(0),
       };
 
@@ -149,7 +157,7 @@ describe('CLI Framework', () => {
       const allCommands = registry.getAll();
       expect(allCommands).toHaveLength(1);
       expect(allCommands[0].name).toBe('init');
-      expect(allCommands[0].description).toBe('Initialize Unreal Engine project for NPM plugin support');
+      expect(allCommands[0].description).toBe('Initialize Unreal Engine project or plugin for NPM package management');
     });
 
     it('should list all available commands for help', () => {
@@ -193,7 +201,7 @@ describe('CLI Framework', () => {
       
       const mockCommand: Command = {
         name: 'init',
-        description: 'Initialize Unreal Engine project for NPM plugin support',
+        description: 'Initialize Unreal Engine project or plugin for NPM package management',
         execute: vi.fn().mockResolvedValue(0),
       };
 
