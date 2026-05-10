@@ -52,7 +52,8 @@ export async function findInstalledPlugins(
   const entries = await fs.readdir(nodeModulesDir, { withFileTypes: true });
 
   for (const entry of entries) {
-    if (entry.isDirectory()) {
+    // isDirectory() returns false for symlinks to directories; check both
+    if (entry.isDirectory() || entry.isSymbolicLink()) {
       // Handle scoped packages (e.g., @uepm/example-plugin)
       if (entry.name.startsWith('@')) {
         const scopePath = path.join(nodeModulesDir, entry.name);
@@ -61,7 +62,7 @@ export async function findInstalledPlugins(
         });
 
         for (const scopedEntry of scopedEntries) {
-          if (scopedEntry.isDirectory()) {
+          if (scopedEntry.isDirectory() || scopedEntry.isSymbolicLink()) {
             const pluginPath = path.join(scopePath, scopedEntry.name);
             const pluginInfo = await extractPluginInfo(
               pluginPath,
