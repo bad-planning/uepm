@@ -125,8 +125,9 @@ export async function hasProjectContext(directory: string): Promise<boolean> {
   try {
     const files = await fs.readdir(directory);
     return files.some(file => file.endsWith('.uproject'));
-  } catch {
-    return false;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    throw err;
   }
 }
 
@@ -139,7 +140,8 @@ export async function hasPluginContext(directory: string): Promise<boolean> {
   try {
     const files = await fs.readdir(directory);
     return files.some(file => file.endsWith('.uplugin'));
-  } catch {
-    return false;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    throw err;
   }
 }
