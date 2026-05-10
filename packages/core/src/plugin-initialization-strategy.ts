@@ -16,7 +16,7 @@ export interface InitResult {
   success: boolean;
   message: string;
   alreadyInitialized?: boolean;
-  context: 'project' | 'plugin';
+  context?: 'project' | 'plugin';
   filesCreated: string[];
   filesModified: string[];
 }

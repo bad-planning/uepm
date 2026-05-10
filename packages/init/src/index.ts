@@ -8,30 +8,15 @@ import {
   UEPMError,
   detectContext,
   PluginInitializationStrategy,
-  InitOptions as CoreInitOptions,
-  InitResult as CoreInitResult,
+  InitOptions,
+  InitResult,
 } from '@uepm/core';
 import * as packageJsonManager from '@uepm/core';
 
 // Export command-related classes
 export { CommandRegistry, Command } from './command-registry';
 export { InitCommand } from './init-command';
-
-export interface InitOptions {
-  projectDir?: string;
-  force?: boolean;
-  pluginName?: string;
-  engineVersion?: string;
-}
-
-export interface InitResult {
-  success: boolean;
-  message: string;
-  alreadyInitialized?: boolean;
-  context?: 'project' | 'plugin';
-  filesCreated?: string[];
-  filesModified?: string[];
-}
+export type { InitOptions, InitResult } from '@uepm/core';
 
 /**
  * Initialize an Unreal Engine project or plugin for NPM support
@@ -49,6 +34,8 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
       return {
         success: false,
         message: contextResult.error,
+        filesCreated: [],
+        filesModified: [],
       };
     }
 
@@ -64,7 +51,7 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
     if (context.type === 'plugin') {
       // Use plugin initialization strategy
       const pluginStrategy = new PluginInitializationStrategy();
-      const coreOptions: CoreInitOptions = {
+      const coreOptions: InitOptions = {
         projectDir: options.projectDir,
         force: options.force,
         pluginName: options.pluginName,
@@ -92,14 +79,17 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
       return {
         success: false,
         message: error.message + (error.suggestion ? `\n${error.suggestion}` : ''),
+        filesCreated: [],
+        filesModified: [],
       };
     }
-    
-    // For other errors, wrap them in a generic error response
+
     const message = error instanceof Error ? error.message : String(error);
     return {
       success: false,
       message: `Unexpected error during initialization: ${message}`,
+      filesCreated: [],
+      filesModified: [],
     };
   }
 }
