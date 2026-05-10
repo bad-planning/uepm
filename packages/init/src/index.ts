@@ -6,11 +6,15 @@ import {
   addPluginDirectory,
   hasPluginDirectory,
   UEPMError,
+  ExitCode,
+  formatErrorMessage,
   detectContext,
   PluginInitializationStrategy,
   InitOptions,
   InitResult,
+  extractPluginMetadata,
 } from '@uepm/core';
+import { derivePluginDefaults, promptPluginOptions, PluginPromptDefaults } from './plugin-prompts';
 import * as packageJsonManager from '@uepm/core';
 
 // Export command-related classes
@@ -49,17 +53,42 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
 
     // Step 3: Choose strategy based on context
     if (context.type === 'plugin') {
-      // Use plugin initialization strategy
+      // Derive prompt defaults from .uplugin metadata
+      const metadata = await extractPluginMetadata(context.primaryFile);
+      const defaults = derivePluginDefaults(metadata, context.pluginName);
+
+      let resolved: PluginPromptDefaults;
+      if (options.yes) {
+        resolved = defaults;
+      } else if (process.stdin.isTTY) {
+        console.log('\nThis utility will walk you through setting up your plugin for NPM distribution.');
+        console.log('Press ^C at any time to quit.\n');
+        resolved = await promptPluginOptions(defaults);
+      } else {
+        throw new UEPMError(
+          'INTERACTIVE_REQUIRED',
+          'uepm-init requires an interactive terminal for plugin initialization.',
+          ExitCode.INVALID_ARGUMENTS,
+          undefined,
+          'Run with --yes to accept derived defaults and skip prompts.'
+        );
+      }
+
       const pluginStrategy = new PluginInitializationStrategy();
       const coreOptions: InitOptions = {
         projectDir: options.projectDir,
         force: options.force,
         pluginName: options.pluginName,
-        engineVersion: options.engineVersion,
+        packageName: options.packageName ?? resolved.packageName,
+        version: options.version ?? resolved.version,
+        description: options.description ?? resolved.description,
+        author: options.author ?? resolved.author,
+        license: options.license ?? resolved.license,
+        engineVersion: options.engineVersion ?? resolved.engineVersion,
       };
-      
+
       const result = await pluginStrategy.initialize(context, coreOptions);
-      
+
       return {
         success: result.success,
         message: warningMessage + result.message,
@@ -78,7 +107,7 @@ export async function init(options: InitOptions = {}): Promise<InitResult> {
     if (error instanceof UEPMError) {
       return {
         success: false,
-        message: error.message + (error.suggestion ? `\n${error.suggestion}` : ''),
+        message: formatErrorMessage(error.toErrorMessage()),
         filesCreated: [],
         filesModified: [],
       };

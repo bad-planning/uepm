@@ -415,9 +415,9 @@ describe('Init Command', () => {
                   await fs.writeFile(packageJsonPath, JSON.stringify(testCase.packageJsonData, null, 2));
                 }
                 
-                // Run init
-                const result = await init({ projectDir: testDir });
-                
+                // Run init (yes: true required since test runner has no TTY)
+                const result = await init({ projectDir: testDir, yes: true });
+
                 // Verify success and context feedback
                 expect(result.success).toBe(true);
                 expect(result.context).toBe('plugin');
@@ -620,6 +620,58 @@ describe('Init Command', () => {
       expect(result.success).toBe(false);
       // formatErrorMessage includes a "Suggestion:" line for UEPMErrors that have one
       expect(result.message).toContain('Suggestion:');
+    });
+  });
+
+  describe('plugin context — interactive prompts', () => {
+    it('returns error when stdin is not a TTY and --yes is not set', async () => {
+      const upluginPath = path.join(tempDir, 'MyPlugin.uplugin');
+      await fs.writeFile(upluginPath, JSON.stringify({ FileVersion: 3, Version: 1 }));
+
+      // In the test runner, process.stdin.isTTY is undefined (falsy), so no --yes = error
+      const result = await init({ projectDir: tempDir });
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('interactive terminal');
+      expect(result.message).toContain('--yes');
+    });
+
+    it('uses derived defaults and skips prompts when yes: true', async () => {
+      const upluginPath = path.join(tempDir, 'CoolPlugin.uplugin');
+      await fs.writeFile(upluginPath, JSON.stringify({
+        FileVersion: 3,
+        Version: 1,
+        VersionName: '2.0.0',
+        FriendlyName: 'Cool Plugin',
+        CreatedBy: 'Acme',
+      }));
+
+      const result = await init({ projectDir: tempDir, yes: true });
+
+      expect(result.success).toBe(true);
+      const pkg = JSON.parse(
+        await fs.readFile(path.join(tempDir, 'package.json'), 'utf-8')
+      );
+      expect(pkg.name).toBe('@acme/cool-plugin');
+      expect(pkg.version).toBe('2.0.0');
+      expect(pkg.author).toBe('Acme');
+    });
+
+    it('passes explicitly set packageName through to the generated package.json', async () => {
+      const upluginPath = path.join(tempDir, 'MyPlugin.uplugin');
+      await fs.writeFile(upluginPath, JSON.stringify({ FileVersion: 3, Version: 1 }));
+
+      const result = await init({
+        projectDir: tempDir,
+        yes: true,
+        packageName: '@custom-scope/my-plugin',
+      });
+
+      expect(result.success).toBe(true);
+      const pkg = JSON.parse(
+        await fs.readFile(path.join(tempDir, 'package.json'), 'utf-8')
+      );
+      expect(pkg.name).toBe('@custom-scope/my-plugin');
     });
   });
 });
