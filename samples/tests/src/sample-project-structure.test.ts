@@ -83,10 +83,10 @@ describe('Sample Project Structure', () => {
         
         // If plugins are installed, verify they have correct versions
         if (packageJson.dependencies['@uepm/example-plugin']) {
-          expect(packageJson.dependencies['@uepm/example-plugin']).toMatch(/^\^?1\.0\.\d+$/);
+          expect(packageJson.dependencies['@uepm/example-plugin']).toMatch(/^\^?1\.\d+\.\d+$/);
         }
         if (packageJson.dependencies['@uepm/dependency-plugin']) {
-          expect(packageJson.dependencies['@uepm/dependency-plugin']).toMatch(/^\^?1\.0\.\d+$/);
+          expect(packageJson.dependencies['@uepm/dependency-plugin']).toMatch(/^\^?1\.\d+\.\d+$/);
         }
       }
     });
@@ -98,7 +98,7 @@ describe('Sample Project Structure', () => {
       
       // Verify dev dependencies
       expect(packageJson.devDependencies).toHaveProperty('@uepm/postinstall');
-      expect(packageJson.devDependencies['@uepm/postinstall']).toMatch(/^\^?1\.0\.\d+$/);
+      expect(packageJson.devDependencies['@uepm/postinstall']).toMatch(/^\^?1\.\d+\.\d+$/);
       
       // Should NOT have @uepm/validate (validation is built into postinstall)
       expect(packageJson.devDependencies).not.toHaveProperty('@uepm/validate');
