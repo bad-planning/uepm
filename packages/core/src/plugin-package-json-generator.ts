@@ -70,25 +70,23 @@ function generatePluginGitignorePatterns(): string[] {
 async function createPluginGitignore(pluginDirectory: string): Promise<void> {
   const gitignorePath = path.join(pluginDirectory, '.gitignore');
   const patterns = generatePluginGitignorePatterns();
-  
+
   try {
-    // Check if .gitignore already exists
     const existingContent = await fs.readFile(gitignorePath, 'utf-8');
-    
-    // Only add patterns that don't already exist
-    const existingLines = existingContent.split('\n').map(line => line.trim());
-    const newPatterns = patterns.filter(pattern => 
-      pattern === '' || pattern.startsWith('#') || !existingLines.includes(pattern.trim())
+    const existingLines = new Set(existingContent.split('\n').map(line => line.trim()));
+
+    // Determine which real (non-blank, non-comment) patterns are missing
+    const missingPatterns = patterns.filter(
+      pattern => pattern !== '' && !pattern.startsWith('#') && !existingLines.has(pattern.trim())
     );
-    
-    if (newPatterns.length > 0) {
-      const updatedContent = existingContent + '\n\n' + newPatterns.join('\n');
+
+    if (missingPatterns.length > 0) {
+      const updatedContent = existingContent.trimEnd() + '\n\n' + missingPatterns.join('\n') + '\n';
       await fs.writeFile(gitignorePath, updatedContent);
     }
   } catch (error) {
-    // File doesn't exist, create new one
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      await fs.writeFile(gitignorePath, patterns.join('\n'));
+    if (error && typeof error === 'object' && 'code' in error && (error as NodeJS.ErrnoException).code === 'ENOENT') {
+      await fs.writeFile(gitignorePath, patterns.join('\n') + '\n');
     } else {
       throw error;
     }
