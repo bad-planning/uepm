@@ -38,7 +38,7 @@ export class PluginInitializationStrategy implements InitializationStrategy {
 
     const directory = context.directory;
     const upluginPath = context.primaryFile;
-    const pluginName = context.pluginName || path.basename(upluginPath, '.uplugin');
+    const pluginName = context.pluginName;
     
     const filesCreated: string[] = [];
     const filesModified: string[] = [];

@@ -87,12 +87,20 @@ export interface PluginDependency {
   Optional?: boolean;
 }
 
-export interface InitContext {
-  type: 'project' | 'plugin';
+export interface ProjectContext {
+  type: 'project';
   primaryFile: string;
   directory: string;
-  pluginName?: string; // Only for plugin context
 }
+
+export interface PluginContext {
+  type: 'plugin';
+  primaryFile: string;
+  directory: string;
+  pluginName: string;
+}
+
+export type InitContext = ProjectContext | PluginContext;
 
 export type ContextDetectionResult =
   | { success: true;  context: InitContext; warnings?: string[] }

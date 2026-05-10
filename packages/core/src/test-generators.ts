@@ -4,7 +4,7 @@
  */
 
 import * as fc from 'fast-check';
-import { UProjectFile, Module, PluginReference, PackageJson, UPluginFile, UPluginModule, PluginDependency, InitContext } from './types';
+import { UProjectFile, Module, PluginReference, PackageJson, UPluginFile, UPluginModule, PluginDependency, InitContext, ProjectContext, PluginContext } from './types';
 
 /**
  * Generator for valid Unreal Engine version strings
