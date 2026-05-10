@@ -3,6 +3,29 @@ import * as path from 'path';
 import { PackageJson } from '@uepm/core';
 
 /**
+ * Determine whether a package directory is an Unreal Engine plugin by examining its content.
+ * A package is considered a plugin if it has a `unreal` field in its package.json or contains
+ * a .uplugin file. This avoids fragile name-based heuristics.
+ */
+async function isUnrealPlugin(packageDir: string): Promise<boolean> {
+  try {
+    const pkgContent = await fs.readFile(path.join(packageDir, 'package.json'), 'utf-8');
+    const pkg = JSON.parse(pkgContent) as { unreal?: unknown };
+    if (pkg.unreal) return true;
+  } catch {
+    // If package.json is unreadable we can't confirm it's a plugin
+    return false;
+  }
+
+  try {
+    const files = await fs.readdir(packageDir);
+    return files.some((f) => f.endsWith('.uplugin'));
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Set up UEPM plugin symlinks in UEPMPlugins directory
  * This creates a dedicated folder for Unreal Engine plugins and symlinks them from node_modules
  */
@@ -54,25 +77,16 @@ export async function setupPlugins(projectDir: string): Promise<void> {
       }
     }
 
-    // Handle UEPM plugins (both file: and NPM dependencies)
-    const isUEPMPlugin = packageName.startsWith('@uepm/') &&
-                        !packageName.includes('core') &&
-                        !packageName.includes('init') &&
-                        !packageName.includes('validate') &&
-                        !packageName.includes('postinstall');
+    // Resolve source path for this dependency
+    let sourcePath: string;
+    if (typeof version === 'string' && version.startsWith('file:')) {
+      sourcePath = path.resolve(projectDir, version.replace('file:', ''));
+    } else {
+      sourcePath = path.join(nodeModulesDir, packageName);
+    }
 
-    if (isUEPMPlugin) {
-      let sourcePath: string;
-
-      if (typeof version === 'string' && version.startsWith('file:')) {
-        // Local file dependency
-        const filePath = version.replace('file:', '');
-        sourcePath = path.resolve(projectDir, filePath);
-      } else {
-        // NPM dependency
-        sourcePath = path.join(nodeModulesDir, packageName);
-      }
-
+    // Check if the package is an Unreal Engine plugin by examining its content
+    if (await isUnrealPlugin(sourcePath)) {
       // Check if source exists
       try {
         await fs.access(sourcePath);
@@ -81,8 +95,8 @@ export async function setupPlugins(projectDir: string): Promise<void> {
         continue;
       }
 
-      // Create symlink in UEPMPlugins directory
-      const pluginName = packageName.replace('@uepm/', '');
+      // Create symlink in UEPMPlugins directory — use the trailing package name as the folder name
+      const pluginName = packageName.includes('/') ? packageName.split('/').pop()! : packageName;
       const uepmLinkPath = path.join(uepmPluginsDir, pluginName);
 
       try {
