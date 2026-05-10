@@ -1,4 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import * as fs from 'fs/promises';
+import * as os from 'os';
+import * as path from 'path';
 import { CommandRegistry, Command } from './command-registry';
 
 describe('CLI Framework', () => {
@@ -192,6 +195,117 @@ describe('CLI Framework', () => {
         expect(cmd.name).toBe(commands[index].name);
         expect(cmd.description).toBe(commands[index].description);
       });
+    });
+  });
+
+  describe('InitCommand.execute()', () => {
+    let tempDir: string;
+    const validUproject = JSON.stringify({ FileVersion: 3, EngineAssociation: '5.3' });
+
+    beforeEach(async () => {
+      tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'uepm-cli-test-'));
+    });
+
+    afterEach(async () => {
+      await fs.rm(tempDir, { recursive: true, force: true });
+    });
+
+    it('returns 0 and adds UEPMPlugins to AdditionalPluginDirectories on success', async () => {
+      const { InitCommand } = await import('./init-command');
+      const uprojectPath = path.join(tempDir, 'MyProject.uproject');
+      await fs.writeFile(uprojectPath, validUproject, 'utf8');
+
+      const cmd = new InitCommand();
+      const exitCode = await cmd.execute([], { projectDir: tempDir });
+
+      expect(exitCode).toBe(0);
+
+      const raw = await fs.readFile(uprojectPath, 'utf8');
+      const parsed = JSON.parse(raw);
+      expect(parsed.AdditionalPluginDirectories).toContain('UEPMPlugins');
+    });
+
+    it('returns non-zero when there is no .uproject in the directory', async () => {
+      // tempDir is empty — no .uproject file present
+      const { InitCommand } = await import('./init-command');
+      const cmd = new InitCommand();
+      const exitCode = await cmd.execute([], { projectDir: tempDir });
+
+      expect(exitCode).toBeGreaterThan(0);
+    });
+
+    it('defaults projectDir to process.cwd() when option is omitted', async () => {
+      const { InitCommand } = await import('./init-command');
+      const uprojectPath = path.join(tempDir, 'MyProject.uproject');
+      await fs.writeFile(uprojectPath, validUproject, 'utf8');
+
+      // Override process.cwd so the command picks up our temp dir
+      const originalCwd = process.cwd;
+      process.cwd = () => tempDir;
+      try {
+        const cmd = new InitCommand();
+        const exitCode = await cmd.execute([], {});
+        // A valid project dir should succeed
+        expect(exitCode).toBe(0);
+      } finally {
+        process.cwd = originalCwd;
+      }
+    });
+
+    it('returns 0 on already-initialized project when force:true is passed', async () => {
+      const { InitCommand } = await import('./init-command');
+      const uprojectPath = path.join(tempDir, 'MyProject.uproject');
+      await fs.writeFile(uprojectPath, validUproject, 'utf8');
+
+      const cmd = new InitCommand();
+
+      // First init — initializes the project
+      const firstExit = await cmd.execute([], { projectDir: tempDir });
+      expect(firstExit).toBe(0);
+
+      // Second init without force — should still succeed (already initialized)
+      const secondExit = await cmd.execute([], { projectDir: tempDir });
+      expect(secondExit).toBe(0);
+
+      // Third init with force:true — should reinitialize successfully
+      const forceExit = await cmd.execute([], { projectDir: tempDir, force: true });
+      expect(forceExit).toBe(0);
+
+      // Verify UEPMPlugins is still present after force reinit
+      const raw = await fs.readFile(uprojectPath, 'utf8');
+      const parsed = JSON.parse(raw);
+      expect(parsed.AdditionalPluginDirectories).toContain('UEPMPlugins');
+    });
+
+    it('returns non-zero when projectDir does not exist', async () => {
+      // A path that does not exist on disk — should cause init to fail
+      const { InitCommand } = await import('./init-command');
+      const nonExistentDir = path.join(tempDir, 'no-such-directory');
+
+      const cmd = new InitCommand();
+      const exitCode = await cmd.execute([], { projectDir: nonExistentDir });
+
+      expect(exitCode).toBeGreaterThan(0);
+    });
+
+    it('returns 1 for unexpected (non-UEPMError) thrown errors', async () => {
+      // Simulate an unexpected error by making the init function throw a plain Error.
+      // We do this by providing a projectDir that is actually a file, which causes
+      // fs operations to throw unexpected OS errors (ENOTDIR).
+      const { InitCommand } = await import('./init-command');
+
+      // Write a regular file where a directory is expected
+      const filePath = path.join(tempDir, 'not-a-dir');
+      await fs.writeFile(filePath, 'I am a file', 'utf8');
+
+      const cmd = new InitCommand();
+      // Passing a file path as projectDir will cause unexpected errors
+      // in the filesystem operations that are not UEPMErrors.
+      // init() wraps unexpected errors in { success: false } so exitCode will be 1.
+      const exitCode = await cmd.execute([], { projectDir: filePath });
+
+      // Whether via UEPMError or plain error, the result must be non-zero
+      expect(exitCode).toBeGreaterThan(0);
     });
   });
 

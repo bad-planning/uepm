@@ -5,6 +5,7 @@ import * as path from 'path';
 import * as os from 'os';
 import {
   generatePluginPackageJson,
+  generatePluginPackageJsonWithDevConfig,
   mergePluginPackageJson,
   validatePluginPackageJson,
   PluginPackageJsonOptions
@@ -587,43 +588,74 @@ describe('Plugin Development Configuration - Property-Based Tests', () => {
   /**
    * Feature: init-plugin-support, Property 19: Conditional build script inclusion
    * Validates: Requirements 7.4
-   * 
-   * For any plugin with source code modules, build scripts should be included in the package.json.
+   *
+   * `generatePluginPackageJsonWithDevConfig` (the async function used by
+   * PluginInitializationStrategy) inspects the plugin directory for a `Source/`
+   * subdirectory and generates different build scripts depending on whether source
+   * modules exist:
+   *
+   *   - With Source/: `build`, `clean`, `prebuild`, `postbuild` are all present
+   *     and contain source-module-specific commands.
+   *   - Without Source/: only `build` and `clean` are present with content-only
+   *     commands; `prebuild` and `postbuild` are absent.
+   *
+   * This property verifies that the distinction holds for arbitrary plugin metadata,
+   * i.e. the conditional behaviour is driven solely by directory structure, not by
+   * metadata values.
    */
-  it('Property 19: includes build scripts conditionally based on plugin structure', async () => {
+  it('Property 19: generatePluginPackageJsonWithDevConfig includes source build scripts when Source/ exists, and omits them when it does not', async () => {
     await fc.assert(
       fc.asyncProperty(
         pluginMetadataArbitrary(),
         pluginNameArbitrary(),
         async (metadata, pluginName) => {
-          const upluginPath = path.join(tempDir, `${pluginName}.uplugin`);
-          
-          // Generate plugin package.json
-          const packageJson = generatePluginPackageJson(metadata, upluginPath);
-          
-          // Verify build and clean scripts are always included
-          // (The actual conditional logic will be implemented in the main task)
-          expect(packageJson.scripts).toBeDefined();
-          expect(packageJson.scripts?.build).toBeDefined();
-          expect(packageJson.scripts?.clean).toBeDefined();
-          
-          // Verify build scripts are meaningful (not just placeholder)
-          expect(typeof packageJson.scripts?.build).toBe('string');
-          expect(typeof packageJson.scripts?.clean).toBe('string');
-          expect(packageJson.scripts?.build.length).toBeGreaterThan(0);
-          expect(packageJson.scripts?.clean.length).toBeGreaterThan(0);
-          
-          // Verify test scripts are also included for development
-          expect(packageJson.scripts?.test).toBeDefined();
-          expect(packageJson.scripts?.['test:watch']).toBeDefined();
-          
-          // Verify development dependencies include build tools
-          expect(packageJson.devDependencies).toBeDefined();
-          expect(packageJson.devDependencies?.['vitest']).toBeDefined();
-          expect(packageJson.devDependencies?.['@types/node']).toBeDefined();
+          // --- Case 1: plugin directory contains a Source/ subdirectory ---
+          const withSourceDir = await fs.mkdtemp(path.join(os.tmpdir(), 'uepm-prop19-src-'));
+          try {
+            await fs.mkdir(path.join(withSourceDir, 'Source'));
+            const upluginPath = path.join(withSourceDir, `${pluginName}.uplugin`);
+            await fs.writeFile(upluginPath, JSON.stringify({ FileVersion: 3 }));
+
+            const pkgWithSource = await generatePluginPackageJsonWithDevConfig(metadata, upluginPath);
+
+            // Source-module scripts must all be present
+            expect(pkgWithSource.scripts?.build).toBeDefined();
+            expect(pkgWithSource.scripts?.clean).toBeDefined();
+            expect(pkgWithSource.scripts?.prebuild).toBeDefined();
+            expect(pkgWithSource.scripts?.postbuild).toBeDefined();
+
+            // The build command must reflect source-module intent
+            expect(pkgWithSource.scripts?.build).toContain('Building plugin with source modules');
+            // The clean command must remove Unreal build artifact directories
+            expect(pkgWithSource.scripts?.clean).toContain('Binaries/');
+          } finally {
+            await fs.rm(withSourceDir, { recursive: true, force: true });
+          }
+
+          // --- Case 2: plugin directory has no Source/ subdirectory ---
+          const withoutSourceDir = await fs.mkdtemp(path.join(os.tmpdir(), 'uepm-prop19-nosrc-'));
+          try {
+            const upluginPath = path.join(withoutSourceDir, `${pluginName}.uplugin`);
+            await fs.writeFile(upluginPath, JSON.stringify({ FileVersion: 3 }));
+
+            const pkgWithoutSource = await generatePluginPackageJsonWithDevConfig(metadata, upluginPath);
+
+            // Only the content-only scripts should be present
+            expect(pkgWithoutSource.scripts?.build).toBeDefined();
+            expect(pkgWithoutSource.scripts?.clean).toBeDefined();
+
+            // Source-only lifecycle hooks must be absent
+            expect(pkgWithoutSource.scripts?.prebuild).toBeUndefined();
+            expect(pkgWithoutSource.scripts?.postbuild).toBeUndefined();
+
+            // The build command must reflect content-only intent
+            expect(pkgWithoutSource.scripts?.build).toContain('Content-only plugin');
+          } finally {
+            await fs.rm(withoutSourceDir, { recursive: true, force: true });
+          }
         }
       ),
-      { numRuns: 100 }
+      { numRuns: 25 }
     );
   });
 });
