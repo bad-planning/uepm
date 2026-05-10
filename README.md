@@ -63,6 +63,7 @@ npx @uepm/init [options]
 **Options:**
 - `-f, --force` - Force reinitialization even if already initialized
 - `-d, --project-dir <path>` - Project directory (defaults to current directory)
+- `-y, --yes` - Accept all derived defaults without prompting (plugin context only)
 - `-h, --help` - Display help information
 - `-V, --version` - Display version number
 
@@ -88,13 +89,32 @@ cd YourPlugin
 npx @uepm/init
 ```
 
-This will:
-- Read metadata from your `.uplugin` file (name, version, description, author)
+You'll be walked through six fields with defaults pre-filled from your `.uplugin` metadata — just hit enter to accept:
+
+```
+This utility will walk you through setting up your plugin for NPM distribution.
+Press ^C at any time to quit.
+
+package name: (@acme/my-plugin)
+version: (1.0.0)
+description: (My awesome plugin)
+author: (Acme)
+license: (MIT)
+engine version (semver range): (^5.0.0)
+```
+
+The package name is automatically scoped using the `CreatedBy` field from your `.uplugin` file (e.g. `CreatedBy: "Acme"` → `@acme/my-plugin`). After confirming, init will:
+
 - Create or update `package.json` configured for NPM distribution
-- Set the `unreal.engineVersion` compatibility range
 - Include a `files` array covering `Source/`, `Content/`, `Resources/`, and `Config/`
 - Add build scripts if a `Source/` directory is detected
 - Create or update `.gitignore` with Unreal Engine plugin patterns
+
+**Non-interactive / CI use:**
+```bash
+# Skip prompts and use derived defaults
+npx @uepm/init --yes
+```
 
 **Examples:**
 ```bash
