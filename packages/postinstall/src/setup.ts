@@ -24,6 +24,7 @@ export async function setupPlugins(projectDir: string): Promise<void> {
   };
 
   let pluginsLinked = 0;
+  const linkErrors: string[] = [];
 
   for (const [packageName, version] of Object.entries(allDeps || {})) {
     // Handle file: dependencies (for local development)
@@ -47,7 +48,9 @@ export async function setupPlugins(projectDir: string): Promise<void> {
         await fs.symlink(relativePathForNodeModules, nodeModulesLinkPath, 'dir');
         console.log(`✓ Linked ${packageName} -> ${filePath} (node_modules)`);
       } catch (error) {
-        console.warn(`⚠ Failed to link ${packageName} in node_modules: ${error}`);
+        const msg = `Failed to link ${packageName} in node_modules: ${error}`;
+        console.warn(`⚠ ${msg}`);
+        linkErrors.push(msg);
       }
     }
 
@@ -96,12 +99,18 @@ export async function setupPlugins(projectDir: string): Promise<void> {
         console.log(`✓ Linked ${packageName} -> UEPMPlugins/${pluginName}`);
         pluginsLinked++;
       } catch (error) {
-        console.warn(`⚠ Failed to link ${packageName} in UEPMPlugins: ${error}`);
+        const msg = `Failed to link ${packageName} in UEPMPlugins: ${error}`;
+        console.warn(`⚠ ${msg}`);
+        linkErrors.push(msg);
       }
     }
   }
 
   if (pluginsLinked > 0) {
     console.log(`✓ Successfully linked ${pluginsLinked} UEPM plugin(s) to UEPMPlugins directory`);
+  }
+
+  if (linkErrors.length > 0) {
+    throw new Error(`${linkErrors.length} symlink(s) failed to create:\n${linkErrors.map(e => `  - ${e}`).join('\n')}`);
   }
 }
