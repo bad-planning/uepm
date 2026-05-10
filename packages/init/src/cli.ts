@@ -16,11 +16,13 @@ async function main() {
     .description('Initialize Unreal Engine project or plugin for NPM package management')
     .version('0.1.0')
     .option('-f, --force', 'Force reinitialization even if already initialized')
+    .option('-y, --yes', 'Accept all defaults without prompting (plugin context only)')
     .option('-d, --project-dir <path>', 'Project or plugin directory (defaults to current directory)')
     .action(async (options) => {
       const initOptions: InitOptions = {
         projectDir: options.projectDir || process.cwd(),
         force: options.force || false,
+        yes: options.yes || false,
       };
 
       try {
@@ -44,11 +46,16 @@ async function main() {
     .addHelpText('after', `
 Examples:
   $ uepm-init                          Initialize project or plugin in current directory
-  $ uepm-init -d ./MyProject           Initialize an Unreal Engine project
   $ uepm-init -d ./MyPlugin            Initialize an Unreal Engine plugin for NPM distribution
+  $ uepm-init --yes                    Initialize plugin using derived defaults (no prompts)
   $ uepm-init --force                  Force reinitialization of project or plugin
 
-The command automatically detects whether the directory contains a .uproject (project) or .uplugin (plugin) file and performs the appropriate initialization.`);
+The command automatically detects whether the directory contains a .uproject (project)
+or .uplugin (plugin) file and performs the appropriate initialization.
+
+In plugin context, you will be prompted to confirm six fields (name, version,
+description, author, license, engine version). Use --yes to skip prompts and
+accept the derived defaults.`);
 
   // Parse arguments
   await program.parseAsync(process.argv);
