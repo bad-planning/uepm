@@ -11,6 +11,12 @@ export interface InitOptions {
   force?: boolean;
   pluginName?: string;
   engineVersion?: string;
+  packageName?: string;
+  version?: string;
+  description?: string;
+  author?: string;
+  license?: string;
+  yes?: boolean;
 }
 
 export interface InitResult {
@@ -50,7 +56,12 @@ export class PluginInitializationStrategy implements InitializationStrategy {
       // Step 2: Generate plugin-specific package.json configuration with development features
       const pluginPackageJson = await generatePluginPackageJsonWithDevConfig(metadata, upluginPath, {
         force: options.force,
-        engineVersion: options.engineVersion
+        engineVersion: options.engineVersion,
+        packageName: options.packageName,
+        version: options.version,
+        description: options.description,
+        author: options.author,
+        license: options.license,
       });
 
       // Step 3: Handle existing package.json or create new one

@@ -9,6 +9,11 @@ import { PluginMetadata } from './uplugin-manager';
 export interface PluginPackageJsonOptions {
   force?: boolean;
   engineVersion?: string;
+  packageName?: string;
+  version?: string;
+  description?: string;
+  author?: string;
+  license?: string;
 }
 
 /**
@@ -168,15 +173,17 @@ export function generatePluginPackageJson(
   const pluginDirectory = path.dirname(upluginPath);
   
   // Determine engine version compatibility
-  const engineVersion = options.engineVersion ||
-                       metadata.engineVersion ||
+  const engineVersion = options.engineVersion ??
+                       metadata.engineVersion ??
                        '>=5.0.0 <6.0.0'; // Default to UE5 compatibility
   
   // Generate package name from plugin name (convert to kebab-case for NPM)
-  const packageName = metadata.name
-    .replace(/([A-Z])/g, '-$1')
-    .toLowerCase()
-    .replace(/^-/, '');
+  const packageName = options.packageName ?? (
+    metadata.name
+      .replace(/([A-Z])/g, '-$1')
+      .toLowerCase()
+      .replace(/^-/, '')
+  );
   
   // Standard plugin files to include in NPM package (will be refined by generatePublishFiles)
   const pluginFiles = [
@@ -214,8 +221,8 @@ export function generatePluginPackageJson(
   
   const packageJson: PackageJson = {
     name: packageName,
-    version: metadata.version,
-    description: metadata.description || metadata.friendlyName || `Unreal Engine plugin: ${metadata.name}`,
+    version: options.version ?? metadata.version,
+    description: options.description ?? metadata.description ?? metadata.friendlyName ?? `Unreal Engine plugin: ${metadata.name}`,
     main: upluginFileName,
     files: pluginFiles,
     keywords: pluginKeywords,
@@ -230,12 +237,13 @@ export function generatePluginPackageJson(
     engines: {
       node: '>=16.0.0'
     },
-    license: 'MIT'
+    license: options.license ?? 'MIT'
   };
-  
+
   // Add optional metadata if available
-  if (metadata.author) {
-    packageJson.author = metadata.author;
+  const resolvedAuthor = options.author ?? metadata.author;
+  if (resolvedAuthor) {
+    packageJson.author = resolvedAuthor;
   }
   
   if (metadata.homepage) {

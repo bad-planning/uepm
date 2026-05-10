@@ -774,4 +774,57 @@ describe('Plugin Package.json Validation - Property-Based Tests', () => {
       { numRuns: 100 }
     );
   });
+
+  describe('Options override metadata', () => {
+    const baseMetadata = {
+      name: 'MyPlugin',
+      version: '1.0.0',
+      description: 'From metadata',
+      author: 'MetadataAuthor',
+      engineVersion: '5.3.0',
+    };
+    const upluginPath = '/fake/MyPlugin.uplugin';
+
+    it('uses options.packageName over derived metadata name', () => {
+      const pkg = generatePluginPackageJson(baseMetadata, upluginPath, {
+        packageName: '@acme/my-plugin',
+      });
+      expect(pkg.name).toBe('@acme/my-plugin');
+    });
+
+    it('uses options.description over metadata description', () => {
+      const pkg = generatePluginPackageJson(baseMetadata, upluginPath, {
+        description: 'Override description',
+      });
+      expect(pkg.description).toBe('Override description');
+    });
+
+    it('uses options.author over metadata author', () => {
+      const pkg = generatePluginPackageJson(baseMetadata, upluginPath, {
+        author: 'Override Author',
+      });
+      expect(pkg.author).toBe('Override Author');
+    });
+
+    it('uses options.license over default MIT', () => {
+      const pkg = generatePluginPackageJson(baseMetadata, upluginPath, {
+        license: 'Apache-2.0',
+      });
+      expect(pkg.license).toBe('Apache-2.0');
+    });
+
+    it('uses options.engineVersion over metadata engineVersion', () => {
+      const pkg = generatePluginPackageJson(baseMetadata, upluginPath, {
+        engineVersion: '^5.0.0',
+      });
+      expect(pkg.unreal?.engineVersion).toBe('^5.0.0');
+    });
+
+    it('uses options.version over metadata version', () => {
+      const pkg = generatePluginPackageJson(baseMetadata, upluginPath, {
+        version: '3.0.0',
+      });
+      expect(pkg.version).toBe('3.0.0');
+    });
+  });
 });
