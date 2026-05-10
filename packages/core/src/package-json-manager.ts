@@ -42,7 +42,7 @@ export async function create(
       postinstall: 'uepm-postinstall'
     },
     devDependencies: {
-      '@uepm/postinstall': '^0.1.0'
+      '@uepm/postinstall': '^1.0.0'
     }
   };
 
@@ -184,7 +184,7 @@ export function ensurePostinstallDependency(
   if (!modified.devDependencies['@uepm/postinstall']) {
     modified.devDependencies = {
       ...modified.devDependencies,
-      '@uepm/postinstall': '^0.1.0'
+      '@uepm/postinstall': '^1.0.0'
     };
   }
   
