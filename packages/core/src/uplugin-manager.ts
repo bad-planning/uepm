@@ -7,6 +7,7 @@ import {
   createJSONParseError,
   createSchemaValidationError,
   UEPMError,
+  ExitCode,
 } from './errors';
 import { validateUPluginSchema } from './validation';
 
@@ -45,7 +46,7 @@ export async function findPluginFile(directory: string): Promise<string> {
     return path.join(directory, upluginFiles[0]);
   } catch (error) {
     // If it's already a UEPMError, rethrow it
-    if (error instanceof Error && error.name === 'UEPMError') {
+    if (error instanceof UEPMError) {
       throw error;
     }
     
@@ -90,7 +91,7 @@ export async function readPlugin(filePath: string): Promise<UPluginFile> {
     return parsed as UPluginFile;
   } catch (error) {
     // If it's already a UEPMError, rethrow it
-    if (error instanceof Error && error.name === 'UEPMError') {
+    if (error instanceof UEPMError) {
       throw error;
     }
     
@@ -184,7 +185,7 @@ function createNoPluginFileError(directory: string): UEPMError {
   return new UEPMError(
     'UPLUGIN_NOT_FOUND',
     `No .uplugin file found in directory: ${directory}`,
-    3, // FILE_NOT_FOUND exit code
+    ExitCode.FILE_NOT_FOUND,
     undefined,
     'Please run this command in your Unreal Engine plugin root directory.'
   );
@@ -197,7 +198,7 @@ function createMultiplePluginFilesError(directory: string, files: string[]): UEP
   return new UEPMError(
     'MULTIPLE_UPLUGIN_FILES',
     `Multiple .uplugin files found in directory: ${directory}`,
-    1, // GENERAL_ERROR exit code
+    ExitCode.GENERAL_ERROR,
     `Found files: ${files.join(', ')}`,
     'Please specify which plugin to initialize or move other .uplugin files to a different directory.'
   );

@@ -1,6 +1,7 @@
 import * as path from 'path';
 import { promises as fs } from 'fs';
 import { InitContext, PackageJson } from './types';
+import { UEPMError } from './errors';
 import { extractPluginMetadata, PluginMetadata } from './uplugin-manager';
 import { generatePluginPackageJsonWithDevConfig, mergePluginPackageJson, validatePluginPackageJson } from './plugin-package-json-generator';
 import * as packageJsonManager from './package-json-manager';
@@ -136,10 +137,10 @@ export class PluginInitializationStrategy implements InitializationStrategy {
 
     } catch (error) {
       // Handle specific error types
-      if (error instanceof Error && error.name === 'UEPMError') {
+      if (error instanceof UEPMError) {
         return {
           success: false,
-          message: error.message,
+          message: error.message + (error.suggestion ? `\n${error.suggestion}` : ''),
           context: 'plugin',
           filesCreated,
           filesModified

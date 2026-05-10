@@ -6,6 +6,7 @@ import {
   createPermissionDeniedError,
   createJSONParseError,
   createSchemaValidationError,
+  UEPMError,
 } from './errors';
 import { validatePackageJsonSchema } from './validation';
 
@@ -77,7 +78,7 @@ export async function read(directory: string): Promise<PackageJson> {
     return parsed as PackageJson;
   } catch (error) {
     // If it's already a UEPMError, rethrow it
-    if (error instanceof Error && error.name === 'UEPMError') {
+    if (error instanceof UEPMError) {
       throw error;
     }
     
