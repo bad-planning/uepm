@@ -38,8 +38,8 @@ export async function setupPlugins(projectDir: string): Promise<void> {
         // Remove existing symlink/directory if it exists
         try {
           await fs.unlink(nodeModulesLinkPath);
-        } catch {
-          // Ignore if doesn't exist
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
         }
 
         // Create symlink in node_modules (relative path)
@@ -86,8 +86,8 @@ export async function setupPlugins(projectDir: string): Promise<void> {
         // Remove existing symlink/directory if it exists
         try {
           await fs.unlink(uepmLinkPath);
-        } catch {
-          // Ignore if doesn't exist
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
         }
 
         // Create symlink in UEPMPlugins (relative path)
