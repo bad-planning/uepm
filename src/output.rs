@@ -2,7 +2,7 @@ use crossterm::{
     execute,
     style::{Color, Print, ResetColor, SetForegroundColor},
 };
-use std::io::{stdout, Write};
+use std::io::stdout;
 
 pub fn print_success(msg: &str) {
     let _ = execute!(
