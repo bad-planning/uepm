@@ -1,3 +1,4 @@
+use crate::context::UEPMContext;
 use crate::errors::UepmError;
 use crate::manifest::{create_manifest, manifest_exists, read_manifest, write_manifest};
 use crate::uproject::{add_plugin_directory, find_uproject, get_engine_association, is_guid};
@@ -5,10 +6,9 @@ use dialoguer::{theme::ColorfulTheme, Confirm};
 use std::io::Write;
 use std::path::Path;
 
-pub async fn run(yes: bool) -> Result<(), UepmError> {
-    let project_dir = std::env::current_dir()?;
-    let commit = select_commit_plugins(&project_dir, yes)?;
-    run_init_with_commit(&project_dir, commit).await
+pub async fn run(ctx: &UEPMContext, yes: bool) -> Result<(), UepmError> {
+    let commit = select_commit_plugins(&ctx.project_dir, yes)?;
+    run_init_with_commit(&ctx.project_dir, commit).await
 }
 
 fn detect_p4(project_dir: &Path) -> bool {

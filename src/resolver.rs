@@ -1,3 +1,4 @@
+use crate::context::UEPMContext;
 use crate::errors::UepmError;
 use crate::installer::{download_and_extract, symlink_local};
 use crate::lockfile::{LockFile, LockedPlugin};
@@ -5,6 +6,35 @@ use crate::manifest::read_manifest;
 use crate::registry::RegistryClient;
 use std::collections::HashMap;
 use std::path::Path;
+
+/// Mutable session state shared across every recursive `resolve_and_install` call.
+/// Borrows the immutable fields from [`UEPMContext`] and owns the per-session maps.
+pub struct ResolveContext<'a> {
+    pub project_dir: &'a Path,
+    pub uepm_plugins_dir: &'a Path,
+    pub lock: &'a mut LockFile,
+    pub resolved: &'a mut HashMap<String, String>,
+    pub client: &'a RegistryClient,
+    pub token: Option<&'a str>,
+}
+
+impl<'a> ResolveContext<'a> {
+    /// Borrow immutable fields from `ctx`; caller supplies the per-session mutable state.
+    pub fn new(
+        ctx: &'a UEPMContext,
+        lock: &'a mut LockFile,
+        resolved: &'a mut HashMap<String, String>,
+    ) -> Self {
+        ResolveContext {
+            project_dir: &ctx.project_dir,
+            uepm_plugins_dir: &ctx.uepm_plugins_dir,
+            lock,
+            resolved,
+            client: &ctx.registry,
+            token: ctx.token.as_deref(),
+        }
+    }
+}
 
 /// Derive the `UEPMPlugins/` subdirectory name from a package identifier.
 /// `"@acme/cool-plugin"` → `"cool-plugin"`, `"my-plugin"` → `"my-plugin"`.
@@ -43,33 +73,26 @@ pub fn check_conflict(
 
 /// Resolve and install `package` at `range`, then recursively resolve any transitive
 /// UEPM dependencies declared in the installed plugin's own `Config/UEPM.ini`.
-/// `resolved` tracks already-installed packages within this session to detect conflicts.
+/// `ctx.resolved` tracks already-installed packages within this session to detect conflicts.
 pub async fn resolve_and_install(
     package: &str,
     range: &str,
-    project_dir: &Path,
-    uepm_plugins_dir: &Path,
-    lock: &mut LockFile,
-    resolved: &mut HashMap<String, String>,
-    client: &RegistryClient,
-    token: Option<&str>,
+    ctx: &mut ResolveContext<'_>,
 ) -> Result<(), UepmError> {
-    if let Some(existing) = resolved.get(package) {
-        // file: deps never semver-conflict; they're always the local copy
+    if let Some(existing) = ctx.resolved.get(package) {
         if !range.starts_with("file:") {
             check_conflict(package, existing, range)?;
         }
         return Ok(());
     }
 
-    // file: local path — bypass registry and lockfile entirely
     if let Some(rel_path) = range.strip_prefix("file:") {
-        let local_path = project_dir.join(rel_path);
+        let local_path = ctx.project_dir.join(rel_path);
         crate::output::print_info(&format!("Installing {} from {}", package, rel_path));
 
-        let version = symlink_local(&local_path, package, uepm_plugins_dir)?;
-        resolved.insert(package.to_string(), version.clone());
-        lock.plugins.insert(
+        let version = symlink_local(&local_path, package, ctx.uepm_plugins_dir)?;
+        ctx.resolved.insert(package.to_string(), version.clone());
+        ctx.lock.plugins.insert(
             package.to_string(),
             LockedPlugin {
                 resolved: version,
@@ -79,12 +102,11 @@ pub async fn resolve_and_install(
             },
         );
 
-        let plugin_dir = uepm_plugins_dir.join(plugin_dir_name(package));
-        resolve_transitive_deps(package, &plugin_dir, project_dir, uepm_plugins_dir, lock, resolved, client, token).await?;
-        return Ok(());
+        let plugin_dir = ctx.uepm_plugins_dir.join(plugin_dir_name(package));
+        return resolve_transitive_deps(package, &plugin_dir, ctx).await;
     }
 
-    let meta = if let Some(locked) = lock.plugins.get(package) {
+    let meta = if let Some(locked) = ctx.lock.plugins.get(package) {
         tracing::debug!("Using locked version {} for {}", locked.resolved, package);
         crate::registry::PackageMetadata {
             version: locked.resolved.clone(),
@@ -92,16 +114,15 @@ pub async fn resolve_and_install(
             integrity: locked.sha512.clone(),
         }
     } else {
-        client.fetch_metadata_for_version(package, range).await?
+        ctx.client.fetch_metadata_for_version(package, range).await?
     };
 
     crate::output::print_info(&format!("Installing {}@{}", package, meta.version));
 
-    download_and_extract(&meta.tarball, &meta.integrity, package, uepm_plugins_dir, token).await?;
+    download_and_extract(&meta.tarball, &meta.integrity, package, ctx.uepm_plugins_dir, ctx.token).await?;
 
-    resolved.insert(package.to_string(), meta.version.clone());
-
-    lock.plugins.insert(
+    ctx.resolved.insert(package.to_string(), meta.version.clone());
+    ctx.lock.plugins.insert(
         package.to_string(),
         LockedPlugin {
             resolved: meta.version.clone(),
@@ -111,34 +132,20 @@ pub async fn resolve_and_install(
         },
     );
 
-    let plugin_dir = uepm_plugins_dir.join(plugin_dir_name(package));
-    resolve_transitive_deps(package, &plugin_dir, project_dir, uepm_plugins_dir, lock, resolved, client, token).await
+    let plugin_dir = ctx.uepm_plugins_dir.join(plugin_dir_name(package));
+    resolve_transitive_deps(package, &plugin_dir, ctx).await
 }
 
 async fn resolve_transitive_deps(
     package: &str,
     plugin_dir: &Path,
-    project_dir: &Path,
-    uepm_plugins_dir: &Path,
-    lock: &mut LockFile,
-    resolved: &mut HashMap<String, String>,
-    client: &RegistryClient,
-    token: Option<&str>,
+    ctx: &mut ResolveContext<'_>,
 ) -> Result<(), UepmError> {
     if let Ok(plugin_manifest) = read_manifest(plugin_dir) {
         for (dep_pkg, dep_range) in &plugin_manifest.plugins {
-            Box::pin(resolve_and_install(
-                dep_pkg,
-                dep_range,
-                project_dir,
-                uepm_plugins_dir,
-                lock,
-                resolved,
-                client,
-                token,
-            ))
-            .await?;
-            lock.plugins
+            Box::pin(resolve_and_install(dep_pkg, dep_range, ctx)).await?;
+            ctx.lock
+                .plugins
                 .get_mut(package)
                 .unwrap()
                 .dependencies
@@ -172,7 +179,6 @@ mod tests {
         use crate::registry::RegistryClient;
         use tempfile::tempdir;
 
-        // Set up a fake local plugin
         let plugin_src = tempdir().unwrap();
         std::fs::write(
             plugin_src.path().join("LocalPlugin.uplugin"),
@@ -180,7 +186,6 @@ mod tests {
         )
         .unwrap();
 
-        // Project dir with the plugin adjacent to it
         let project = tempdir().unwrap();
         let plugin_rel = "LocalPlugin";
         let plugin_abs = project.path().join(plugin_rel);
@@ -198,18 +203,18 @@ mod tests {
         let mut lock = LockFile::default();
         let mut resolved = HashMap::new();
 
-        resolve_and_install(
-            "@acme/local-plugin",
-            &format!("file:{plugin_rel}"),
-            project.path(),
-            &uepm_dir,
-            &mut lock,
-            &mut resolved,
-            &client,
-            None,
-        )
-        .await
-        .unwrap();
+        let mut ctx = ResolveContext {
+            project_dir: project.path(),
+            uepm_plugins_dir: &uepm_dir,
+            lock: &mut lock,
+            resolved: &mut resolved,
+            client: &client,
+            token: None,
+        };
+
+        resolve_and_install("@acme/local-plugin", &format!("file:{plugin_rel}"), &mut ctx)
+            .await
+            .unwrap();
 
         let dest = uepm_dir.join("local-plugin");
         assert!(dest.is_symlink());

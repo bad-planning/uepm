@@ -1,71 +1,46 @@
+use crate::context::UEPMContext;
 use crate::errors::UepmError;
 use crate::lockfile::{read_lockfile, write_lockfile};
 use crate::manifest::{add_plugin, read_manifest};
-use crate::registry::RegistryClient;
-use crate::resolver::resolve_and_install;
+use crate::resolver::{resolve_and_install, ResolveContext};
 use std::collections::HashMap;
-use std::path::Path;
 
-/// Entry point for `uepm install`. Delegates to [`run_install`] using the current directory.
-pub async fn run(packages: Vec<String>) -> Result<(), UepmError> {
-    let project_dir = std::env::current_dir()?;
-    run_install(&packages, &project_dir).await
+/// Entry point for `uepm install`. Delegates to [`run_install`] using the provided context.
+pub async fn run(ctx: &UEPMContext, packages: Vec<String>) -> Result<(), UepmError> {
+    run_install(ctx, &packages).await
 }
 
-/// Install `packages` into `project_dir`. If `packages` is empty, installs everything
+/// Install `packages` into `ctx.project_dir`. If `packages` is empty, installs everything
 /// listed in `Config/UEPM.ini`. New packages are pinned to `^<resolved>` and written
 /// back to the manifest.
-pub async fn run_install(packages: &[String], project_dir: &Path) -> Result<(), UepmError> {
-    let uepm_plugins_dir = project_dir.join("UEPMPlugins");
-    if !uepm_plugins_dir.exists() {
-        std::fs::create_dir_all(&uepm_plugins_dir)?;
+pub async fn run_install(ctx: &UEPMContext, packages: &[String]) -> Result<(), UepmError> {
+    if !ctx.uepm_plugins_dir.exists() {
+        std::fs::create_dir_all(&ctx.uepm_plugins_dir)?;
     }
 
-    let client = RegistryClient::from_env();
-    let token = std::env::var("UEPM_TOKEN").ok();
-    let mut lock = read_lockfile(project_dir)?.unwrap_or_default();
+    let mut lock = read_lockfile(&ctx.project_dir)?.unwrap_or_default();
     let mut resolved: HashMap<String, String> = HashMap::new();
+    let mut rctx = ResolveContext::new(ctx, &mut lock, &mut resolved);
 
     if packages.is_empty() {
-        let manifest = read_manifest(project_dir)?;
+        let manifest = read_manifest(&ctx.project_dir)?;
         for (package, range) in &manifest.plugins {
-            resolve_and_install(
-                package,
-                range,
-                project_dir,
-                &uepm_plugins_dir,
-                &mut lock,
-                &mut resolved,
-                &client,
-                token.as_deref(),
-            )
-            .await?;
+            resolve_and_install(package, range, &mut rctx).await?;
         }
     } else {
         for pkg_spec in packages {
             let (package, range) = parse_package_spec(pkg_spec);
             let range = range.unwrap_or("*");
 
-            let meta = client.fetch_metadata_for_version(&package, range).await?;
+            let meta = rctx.client.fetch_metadata_for_version(&package, range).await?;
             let pinned_range = format!("^{}", meta.version);
 
-            resolve_and_install(
-                &package,
-                &pinned_range,
-                project_dir,
-                &uepm_plugins_dir,
-                &mut lock,
-                &mut resolved,
-                &client,
-                token.as_deref(),
-            )
-            .await?;
-
-            add_plugin(project_dir, &package, &pinned_range)?;
+            resolve_and_install(&package, &pinned_range, &mut rctx).await?;
+            add_plugin(&ctx.project_dir, &package, &pinned_range)?;
         }
     }
 
-    write_lockfile(project_dir, &lock)?;
+    write_lockfile(&ctx.project_dir, &lock)?;
     crate::output::print_success(&format!("Installed {} plugin(s)", resolved.len()));
     Ok(())
 }

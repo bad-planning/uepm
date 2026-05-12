@@ -1,21 +1,17 @@
+use crate::context::UEPMContext;
 use crate::errors::UepmError;
 use crate::lockfile::{write_lockfile, LockFile};
 use crate::manifest::read_manifest;
-use crate::registry::RegistryClient;
-use crate::resolver::resolve_and_install;
+use crate::resolver::{resolve_and_install, ResolveContext};
 use std::collections::HashMap;
 
 /// Re-resolve and reinstall plugins, ignoring the lockfile so fresh versions are fetched.
 /// If `package` is `Some`, updates only that plugin; otherwise updates all.
-pub async fn run(package: Option<String>) -> Result<(), UepmError> {
-    let project_dir = std::env::current_dir()?;
-    let manifest = read_manifest(&project_dir)?;
-    let uepm_dir = project_dir.join("UEPMPlugins");
-    let client = RegistryClient::from_env();
-    let token = std::env::var("UEPM_TOKEN").ok();
-
+pub async fn run(ctx: &UEPMContext, package: Option<String>) -> Result<(), UepmError> {
+    let manifest = read_manifest(&ctx.project_dir)?;
     let mut lock = LockFile::default();
     let mut resolved: HashMap<String, String> = HashMap::new();
+    let mut rctx = ResolveContext::new(ctx, &mut lock, &mut resolved);
 
     let to_update: Vec<(String, String)> = match package {
         Some(ref pkg) => manifest
@@ -27,20 +23,10 @@ pub async fn run(package: Option<String>) -> Result<(), UepmError> {
     };
 
     for (pkg, range) in to_update {
-        resolve_and_install(
-            &pkg,
-            &range,
-            &project_dir,
-            &uepm_dir,
-            &mut lock,
-            &mut resolved,
-            &client,
-            token.as_deref(),
-        )
-        .await?;
+        resolve_and_install(&pkg, &range, &mut rctx).await?;
     }
 
-    write_lockfile(&project_dir, &lock)?;
+    write_lockfile(&ctx.project_dir, &lock)?;
     crate::output::print_success(&format!("Updated {} plugin(s)", resolved.len()));
     Ok(())
 }

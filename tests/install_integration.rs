@@ -3,6 +3,7 @@ use mockito::Server;
 use serde_json::json;
 use sha2::{Digest, Sha512};
 use tempfile::tempdir;
+use uepm::context::UEPMContext;
 
 fn make_fake_tarball() -> Vec<u8> {
     use flate2::{write::GzEncoder, Compression};
@@ -23,18 +24,12 @@ fn make_fake_tarball() -> Vec<u8> {
 }
 
 fn sha512_integrity(data: &[u8]) -> String {
-    format!(
-        "sha512-{}",
-        general_purpose::STANDARD.encode(Sha512::digest(data))
-    )
+    format!("sha512-{}", general_purpose::STANDARD.encode(Sha512::digest(data)))
 }
 
 #[tokio::test]
 async fn test_install_single_plugin() {
     let dir = tempdir().unwrap();
-    let uepm_dir = dir.path().join("UEPMPlugins");
-    std::fs::create_dir(&uepm_dir).unwrap();
-
     std::fs::create_dir(dir.path().join("Config")).unwrap();
     std::fs::write(dir.path().join("Config/UEPM.ini"), "[Plugins]\n# empty\n").unwrap();
 
@@ -50,10 +45,7 @@ async fn test_install_single_plugin() {
             "1.0.0": {
                 "name": "@acme/cool-plugin",
                 "version": "1.0.0",
-                "dist": {
-                    "tarball": tarball_url,
-                    "integrity": integrity,
-                }
+                "dist": { "tarball": tarball_url, "integrity": integrity }
             }
         }
     });
@@ -74,21 +66,17 @@ async fn test_install_single_plugin() {
         .await;
 
     std::env::set_var("UEPM_REGISTRY", server.url());
-
-    uepm::commands::install::run_install(&["@acme/cool-plugin".to_string()], dir.path())
+    let ctx = UEPMContext::with_dir(dir.path().to_path_buf());
+    uepm::commands::install::run_install(&ctx, &["@acme/cool-plugin".to_string()])
         .await
         .unwrap();
-
     std::env::remove_var("UEPM_REGISTRY");
 
-    assert!(uepm_dir
-        .join("cool-plugin")
-        .join("CoolPlugin.uplugin")
-        .exists());
+    assert!(ctx.uepm_plugins_dir.join("cool-plugin").join("CoolPlugin.uplugin").exists());
 
-    let manifest = uepm::manifest::read_manifest(dir.path()).unwrap();
+    let manifest = uepm::manifest::read_manifest(&ctx.project_dir).unwrap();
     assert!(manifest.plugins.contains_key("@acme/cool-plugin"));
 
-    let lock = uepm::lockfile::read_lockfile(dir.path()).unwrap().unwrap();
+    let lock = uepm::lockfile::read_lockfile(&ctx.project_dir).unwrap().unwrap();
     assert!(lock.plugins.contains_key("@acme/cool-plugin"));
 }

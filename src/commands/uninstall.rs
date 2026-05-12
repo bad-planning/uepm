@@ -1,21 +1,23 @@
+use crate::context::UEPMContext;
 use crate::errors::UepmError;
 use crate::manifest::remove_plugin;
 use crate::resolver::plugin_dir_name;
-use std::path::Path;
 
-/// Entry point for `uepm uninstall`. Delegates to [`run_uninstall`] using the current directory.
-pub async fn run(package: String) -> Result<(), UepmError> {
-    let project_dir = std::env::current_dir()?;
-    run_uninstall(&package, &project_dir).await
+/// Entry point for `uepm uninstall`. Delegates to [`run_uninstall`] using the provided context.
+pub async fn run(ctx: &UEPMContext, package: String) -> Result<(), UepmError> {
+    run_uninstall(ctx, &package).await
 }
 
 /// Remove `package` from `UEPMPlugins/` and from `Config/UEPM.ini`.
-pub async fn run_uninstall(package: &str, project_dir: &Path) -> Result<(), UepmError> {
-    let uepm_dir = project_dir.join("UEPMPlugins");
-    let plugin_dir = uepm_dir.join(plugin_dir_name(package));
+pub async fn run_uninstall(ctx: &UEPMContext, package: &str) -> Result<(), UepmError> {
+    let plugin_dir = ctx.uepm_plugins_dir.join(plugin_dir_name(package));
 
-    if plugin_dir.exists() {
-        std::fs::remove_dir_all(&plugin_dir)?;
+    if plugin_dir.exists() || plugin_dir.symlink_metadata().is_ok() {
+        if plugin_dir.is_symlink() {
+            std::fs::remove_file(&plugin_dir)?;
+        } else {
+            std::fs::remove_dir_all(&plugin_dir)?;
+        }
         crate::output::print_success(&format!("Removed {}", plugin_dir_name(package)));
     } else {
         crate::output::print_warn(&format!(
@@ -24,7 +26,7 @@ pub async fn run_uninstall(package: &str, project_dir: &Path) -> Result<(), Uepm
         ));
     }
 
-    remove_plugin(project_dir, package)?;
+    remove_plugin(&ctx.project_dir, package)?;
     Ok(())
 }
 
@@ -36,9 +38,9 @@ mod tests {
     #[tokio::test]
     async fn test_uninstall_removes_directory_and_updates_manifest() {
         let dir = tempdir().unwrap();
-        let uepm_dir = dir.path().join("UEPMPlugins");
-        std::fs::create_dir(&uepm_dir).unwrap();
-        std::fs::create_dir(uepm_dir.join("cool-plugin")).unwrap();
+        let ctx = UEPMContext::with_dir(dir.path().to_path_buf());
+        std::fs::create_dir(&ctx.uepm_plugins_dir).unwrap();
+        std::fs::create_dir(ctx.uepm_plugins_dir.join("cool-plugin")).unwrap();
 
         std::fs::create_dir(dir.path().join("Config")).unwrap();
         std::fs::write(
@@ -47,12 +49,10 @@ mod tests {
         )
         .unwrap();
 
-        run_uninstall("@acme/cool-plugin", dir.path())
-            .await
-            .unwrap();
+        run_uninstall(&ctx, "@acme/cool-plugin").await.unwrap();
 
-        assert!(!uepm_dir.join("cool-plugin").exists());
-        let m = crate::manifest::read_manifest(dir.path()).unwrap();
+        assert!(!ctx.uepm_plugins_dir.join("cool-plugin").exists());
+        let m = crate::manifest::read_manifest(&ctx.project_dir).unwrap();
         assert!(!m.plugins.contains_key("@acme/cool-plugin"));
     }
 }

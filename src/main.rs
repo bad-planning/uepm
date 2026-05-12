@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use tracing_subscriber::EnvFilter;
+use uepm::context::UEPMContext;
 
 #[derive(Parser)]
 #[command(name = "uepm", version, about = "Unreal Engine Package Manager")]
@@ -19,7 +20,7 @@ enum Commands {
     /// Install one or all plugins
     Install {
         /// Packages to install, e.g. @scope/plugin or @scope/plugin@1.0.0
-        /// If empty, installs all plugins in uepm.ini
+        /// If empty, installs all plugins in Config/UEPM.ini
         packages: Vec<String>,
     },
     /// Remove a plugin
@@ -42,12 +43,20 @@ async fn main() {
 
     let cli = Cli::parse();
 
+    let ctx = match UEPMContext::new() {
+        Ok(c) => c,
+        Err(e) => {
+            uepm::output::print_error(&format!("{e}"));
+            std::process::exit(1);
+        }
+    };
+
     let result = match cli.command {
-        Commands::Init { yes } => uepm::commands::init::run(yes).await,
-        Commands::Install { packages } => uepm::commands::install::run(packages).await,
-        Commands::Uninstall { package } => uepm::commands::uninstall::run(package).await,
-        Commands::Update { package } => uepm::commands::update::run(package).await,
-        Commands::List => uepm::commands::list::run().await,
+        Commands::Init { yes } => uepm::commands::init::run(&ctx, yes).await,
+        Commands::Install { packages } => uepm::commands::install::run(&ctx, packages).await,
+        Commands::Uninstall { package } => uepm::commands::uninstall::run(&ctx, package).await,
+        Commands::Update { package } => uepm::commands::update::run(&ctx, package).await,
+        Commands::List => uepm::commands::list::run(&ctx).await,
     };
 
     if let Err(e) = result {

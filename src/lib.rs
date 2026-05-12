@@ -1,4 +1,5 @@
 pub mod commands;
+pub mod context;
 pub mod errors;
 pub mod installer;
 pub mod lockfile;
