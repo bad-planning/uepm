@@ -54,11 +54,11 @@ impl RegistryClient {
         Self::new(&base_url, token)
     }
 
-    /// Fetch metadata for the `latest` dist-tag of `package`.
-    pub async fn fetch_metadata(&self, package: &str) -> Result<PackageMetadata, UepmError> {
+    /// Fetch and parse the full npm package document for `package`.
+    /// Returns [`UepmError::PackageNotFound`] on a 404 response.
+    async fn fetch_package(&self, package: &str) -> Result<NpmPackage, UepmError> {
         let encoded = urlencoding::encode(package).into_owned();
         let url = format!("{}/{}", self.base_url, encoded);
-
         tracing::debug!("Fetching metadata from {url}");
 
         let mut req = self.client.get(&url);
@@ -67,36 +67,21 @@ impl RegistryClient {
         }
 
         let resp = req.send().await?;
-
         if resp.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(UepmError::PackageNotFound {
-                package: package.to_string(),
-            });
+            return Err(UepmError::PackageNotFound { package: package.to_string() });
         }
         resp.error_for_status_ref()?;
+        Ok(resp.json().await?)
+    }
 
-        let npm_pkg: NpmPackage = resp.json().await?;
+    /// Fetch metadata for the `latest` dist-tag of `package`.
+    pub async fn fetch_metadata(&self, package: &str) -> Result<PackageMetadata, UepmError> {
+        let npm_pkg = self.fetch_package(package).await?;
+        let not_found = || UepmError::PackageNotFound { package: package.to_string() };
 
-        let latest = npm_pkg
-            .dist_tags
-            .get("latest")
-            .ok_or_else(|| UepmError::PackageNotFound {
-                package: package.to_string(),
-            })?;
-
-        let version_info =
-            npm_pkg
-                .versions
-                .get(latest)
-                .ok_or_else(|| UepmError::PackageNotFound {
-                    package: package.to_string(),
-                })?;
-
-        Ok(PackageMetadata {
-            version: version_info.version.clone(),
-            tarball: version_info.dist.tarball.clone(),
-            integrity: version_info.dist.integrity.clone(),
-        })
+        let latest = npm_pkg.dist_tags.get("latest").ok_or_else(not_found)?;
+        let version_info = npm_pkg.versions.get(latest).ok_or_else(not_found)?;
+        Ok(version_info.to_metadata())
     }
 
     /// Fetch metadata for the highest version of `package` that satisfies `range`.
@@ -105,34 +90,20 @@ impl RegistryClient {
         package: &str,
         range: &str,
     ) -> Result<PackageMetadata, UepmError> {
-        let encoded = urlencoding::encode(package).into_owned();
-        let url = format!("{}/{}", self.base_url, encoded);
-
-        let mut req = self.client.get(&url);
-        if let Some(ref token) = self.token {
-            req = req.bearer_auth(token);
-        }
-
-        let resp = req.send().await?;
-
-        if resp.status() == reqwest::StatusCode::NOT_FOUND {
-            return Err(UepmError::PackageNotFound {
-                package: package.to_string(),
-            });
-        }
-        resp.error_for_status_ref()?;
-
-        let npm_pkg: NpmPackage = resp.json().await?;
+        let npm_pkg = self.fetch_package(package).await?;
         let versions: Vec<String> = npm_pkg.versions.keys().cloned().collect();
         let best = resolve_best_version(&versions, range)?;
+        Ok(npm_pkg.versions[&best].to_metadata())
+    }
+}
 
-        let version_info = npm_pkg.versions.get(&best).unwrap();
-
-        Ok(PackageMetadata {
-            version: version_info.version.clone(),
-            tarball: version_info.dist.tarball.clone(),
-            integrity: version_info.dist.integrity.clone(),
-        })
+impl NpmVersion {
+    fn to_metadata(&self) -> PackageMetadata {
+        PackageMetadata {
+            version: self.version.clone(),
+            tarball: self.dist.tarball.clone(),
+            integrity: self.dist.integrity.clone(),
+        }
     }
 }
 
@@ -143,17 +114,11 @@ pub fn resolve_best_version(versions: &[String], range: &str) -> Result<String, 
         message: e.to_string(),
     })?;
 
-    let mut matching: Vec<semver::Version> = versions
+    versions
         .iter()
         .filter_map(|v| semver::Version::parse(v).ok())
         .filter(|v| req.matches(v))
-        .collect();
-
-    matching.sort();
-
-    matching
-        .into_iter()
-        .last()
+        .max()
         .map(|v| v.to_string())
         .ok_or_else(|| UepmError::NoMatchingVersion {
             package: String::new(),

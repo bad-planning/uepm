@@ -39,7 +39,7 @@ impl<'a> ResolveContext<'a> {
 /// Derive the `UEPMPlugins/` subdirectory name from a package identifier.
 /// `"@acme/cool-plugin"` → `"cool-plugin"`, `"my-plugin"` → `"my-plugin"`.
 pub fn plugin_dir_name(package: &str) -> &str {
-    package.split('/').last().unwrap_or(package)
+    package.rsplit('/').next().unwrap_or(package)
 }
 
 /// Verify that `resolved_version` satisfies `required_range`.
@@ -86,48 +86,36 @@ pub async fn resolve_and_install(
         return Ok(());
     }
 
-    if let Some(rel_path) = range.strip_prefix("file:") {
+    let (version, tarball, sha512) = if let Some(rel_path) = range.strip_prefix("file:") {
         let local_path = ctx.project_dir.join(rel_path);
-        crate::output::print_info(&format!("Installing {} from {}", package, rel_path));
+        crate::output::print_info(&format!("Installing {package} from {rel_path}"));
 
         let version = symlink_local(&local_path, package, ctx.uepm_plugins_dir)?;
-        ctx.resolved.insert(package.to_string(), version.clone());
-        ctx.lock.plugins.insert(
-            package.to_string(),
-            LockedPlugin {
-                resolved: version,
-                tarball: range.to_string(),
-                sha512: String::new(),
-                dependencies: HashMap::new(),
-            },
-        );
-
-        let plugin_dir = ctx.uepm_plugins_dir.join(plugin_dir_name(package));
-        return resolve_transitive_deps(package, &plugin_dir, ctx).await;
-    }
-
-    let meta = if let Some(locked) = ctx.lock.plugins.get(package) {
-        tracing::debug!("Using locked version {} for {}", locked.resolved, package);
-        crate::registry::PackageMetadata {
-            version: locked.resolved.clone(),
-            tarball: locked.tarball.clone(),
-            integrity: locked.sha512.clone(),
-        }
+        (version, range.to_string(), String::new())
     } else {
-        ctx.client.fetch_metadata_for_version(package, range).await?
+        let meta = if let Some(locked) = ctx.lock.plugins.get(package) {
+            tracing::debug!("Using locked version {} for {}", locked.resolved, package);
+            crate::registry::PackageMetadata {
+                version: locked.resolved.clone(),
+                tarball: locked.tarball.clone(),
+                integrity: locked.sha512.clone(),
+            }
+        } else {
+            ctx.client.fetch_metadata_for_version(package, range).await?
+        };
+
+        crate::output::print_info(&format!("Installing {}@{}", package, meta.version));
+        download_and_extract(&meta.tarball, &meta.integrity, package, ctx.uepm_plugins_dir, ctx.token).await?;
+        (meta.version, meta.tarball, meta.integrity)
     };
 
-    crate::output::print_info(&format!("Installing {}@{}", package, meta.version));
-
-    download_and_extract(&meta.tarball, &meta.integrity, package, ctx.uepm_plugins_dir, ctx.token).await?;
-
-    ctx.resolved.insert(package.to_string(), meta.version.clone());
+    ctx.resolved.insert(package.to_string(), version.clone());
     ctx.lock.plugins.insert(
         package.to_string(),
         LockedPlugin {
-            resolved: meta.version.clone(),
-            tarball: meta.tarball.clone(),
-            sha512: meta.integrity.clone(),
+            resolved: version,
+            tarball,
+            sha512,
             dependencies: HashMap::new(),
         },
     );

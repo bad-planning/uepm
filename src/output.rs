@@ -4,50 +4,33 @@ use crossterm::{
 };
 use std::io::stdout;
 
-/// Print a green success message prefixed with ✓.
-pub fn print_success(msg: &str) {
+fn print_prefixed(color: Color, prefix: &str, msg: &str) {
     let _ = execute!(
         stdout(),
-        SetForegroundColor(Color::Green),
-        Print("✓ "),
+        SetForegroundColor(color),
+        Print(prefix),
         ResetColor,
         Print(msg),
         Print("\n"),
     );
+}
+
+/// Print a green success message prefixed with ✓.
+pub fn print_success(msg: &str) {
+    print_prefixed(Color::Green, "✓ ", msg);
 }
 
 /// Print a yellow warning message prefixed with ⚠.
 pub fn print_warn(msg: &str) {
-    let _ = execute!(
-        stdout(),
-        SetForegroundColor(Color::Yellow),
-        Print("⚠ "),
-        ResetColor,
-        Print(msg),
-        Print("\n"),
-    );
+    print_prefixed(Color::Yellow, "⚠ ", msg);
 }
 
 /// Print a red error message prefixed with ✗.
 pub fn print_error(msg: &str) {
-    let _ = execute!(
-        stdout(),
-        SetForegroundColor(Color::Red),
-        Print("✗ "),
-        ResetColor,
-        Print(msg),
-        Print("\n"),
-    );
+    print_prefixed(Color::Red, "✗ ", msg);
 }
 
 /// Print a cyan informational message prefixed with ℹ.
 pub fn print_info(msg: &str) {
-    let _ = execute!(
-        stdout(),
-        SetForegroundColor(Color::Cyan),
-        Print("ℹ "),
-        ResetColor,
-        Print(msg),
-        Print("\n"),
-    );
+    print_prefixed(Color::Cyan, "ℹ ", msg);
 }

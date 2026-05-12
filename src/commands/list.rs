@@ -49,25 +49,24 @@ pub fn list_plugins(project_dir: &Path) -> Result<Vec<PluginEntry>, UepmError> {
         .as_deref()
         .and_then(|v| semver::VersionReq::parse(v).ok());
 
-    let mut entries = Vec::new();
-
-    for (name, engine_range) in &manifest.plugins {
-        let resolved = lock.plugins.get(name).map(|lp| lp.resolved.clone());
-
-        let compatible = resolved.as_deref().and_then(|v| {
-            let ver = semver::Version::parse(v).ok()?;
-            let req = semver::VersionReq::parse(engine_range).ok()?;
-            let _ = engine_req.as_ref()?;
-            Some(req.matches(&ver))
-        });
-
-        entries.push(PluginEntry {
-            name: name.clone(),
-            resolved_version: resolved,
-            engine_range: engine_range.clone(),
-            compatible,
-        });
-    }
+    let entries = manifest
+        .plugins
+        .iter()
+        .map(|(name, engine_range)| {
+            let resolved = lock.plugins.get(name).map(|lp| lp.resolved.clone());
+            let compatible = engine_req.as_ref().and(resolved.as_deref()).and_then(|v| {
+                let ver = semver::Version::parse(v).ok()?;
+                let req = semver::VersionReq::parse(engine_range).ok()?;
+                Some(req.matches(&ver))
+            });
+            PluginEntry {
+                name: name.clone(),
+                resolved_version: resolved,
+                engine_range: engine_range.clone(),
+                compatible,
+            }
+        })
+        .collect();
 
     Ok(entries)
 }

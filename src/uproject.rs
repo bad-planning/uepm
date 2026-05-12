@@ -6,14 +6,9 @@ use std::path::{Path, PathBuf};
 /// Returns an error if none is found.
 pub fn find_uproject(dir: &Path) -> Result<PathBuf, UepmError> {
     let mut found: Vec<PathBuf> = std::fs::read_dir(dir)?
-        .filter_map(|e| e.ok())
-        .filter(|e| {
-            e.path()
-                .extension()
-                .map(|ext| ext == "uproject")
-                .unwrap_or(false)
-        })
+        .flatten()
         .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|ext| ext == "uproject"))
         .collect();
 
     found.sort();

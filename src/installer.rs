@@ -1,4 +1,5 @@
 use crate::errors::UepmError;
+use crate::resolver::plugin_dir_name;
 use base64::{engine::general_purpose, Engine};
 use bytes::Bytes;
 use sha2::{Digest, Sha512};
@@ -26,9 +27,7 @@ pub async fn download_and_extract(
 
     verify_integrity(&data, integrity, package_name)?;
 
-    let plugin_dir_name = package_name.split('/').last().unwrap_or(package_name);
-    let dest = uepm_plugins_dir.join(plugin_dir_name);
-
+    let dest = uepm_plugins_dir.join(plugin_dir_name(package_name));
     if dest.exists() {
         std::fs::remove_dir_all(&dest)?;
     }
@@ -115,8 +114,7 @@ pub fn symlink_local(
     let abs_src = src.canonicalize()?;
     let version = read_uplugin_version(&abs_src).unwrap_or_else(|| "0.0.0".to_string());
 
-    let dir_name = package_name.split('/').last().unwrap_or(package_name);
-    let dest = uepm_plugins_dir.join(dir_name);
+    let dest = uepm_plugins_dir.join(plugin_dir_name(package_name));
 
     if dest.symlink_metadata().is_ok() {
         if dest.is_symlink() || dest.is_file() {
@@ -136,17 +134,14 @@ pub fn symlink_local(
 }
 
 fn read_uplugin_version(plugin_dir: &Path) -> Option<String> {
-    let dir = std::fs::read_dir(plugin_dir).ok()?;
-    for entry in dir.flatten() {
+    for entry in std::fs::read_dir(plugin_dir).ok()?.flatten() {
         let path = entry.path();
         if path.extension().and_then(|e| e.to_str()) != Some("uplugin") {
             continue;
         }
-        if let Ok(content) = std::fs::read_to_string(&path) {
-            if let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) {
-                return json["VersionName"].as_str().map(String::from);
-            }
-        }
+        let Ok(content) = std::fs::read_to_string(&path) else { continue };
+        let Ok(json) = serde_json::from_str::<serde_json::Value>(&content) else { continue };
+        return json["VersionName"].as_str().map(String::from);
     }
     None
 }
@@ -179,9 +174,7 @@ mod tests {
     }
 
     fn sha512_b64(data: &[u8]) -> String {
-        use sha2::Digest;
-        let hash = Sha512::digest(data);
-        general_purpose::STANDARD.encode(hash)
+        general_purpose::STANDARD.encode(Sha512::digest(data))
     }
 
     #[tokio::test]

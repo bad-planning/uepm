@@ -46,12 +46,11 @@ pub async fn run_install(ctx: &UEPMContext, packages: &[String]) -> Result<(), U
 }
 
 fn parse_package_spec(spec: &str) -> (String, Option<&str>) {
-    if let Some(pos) = spec.rfind('@') {
-        if pos > 0 {
-            return (spec[..pos].to_string(), Some(&spec[pos + 1..]));
-        }
+    // Only split on the *last* `@` after position 0 so that a leading scope `@` is preserved.
+    match spec.rfind('@').filter(|&pos| pos > 0) {
+        Some(pos) => (spec[..pos].to_string(), Some(&spec[pos + 1..])),
+        None => (spec.to_string(), None),
     }
-    (spec.to_string(), None)
 }
 
 #[cfg(test)]

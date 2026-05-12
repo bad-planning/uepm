@@ -10,7 +10,8 @@ pub async fn run(ctx: &UEPMContext, package: String) -> Result<(), UepmError> {
 
 /// Remove `package` from `UEPMPlugins/` and from `Config/UEPM.ini`.
 pub async fn run_uninstall(ctx: &UEPMContext, package: &str) -> Result<(), UepmError> {
-    let plugin_dir = ctx.uepm_plugins_dir.join(plugin_dir_name(package));
+    let dir_name = plugin_dir_name(package);
+    let plugin_dir = ctx.uepm_plugins_dir.join(dir_name);
 
     if plugin_dir.exists() || plugin_dir.symlink_metadata().is_ok() {
         if plugin_dir.is_symlink() {
@@ -18,12 +19,9 @@ pub async fn run_uninstall(ctx: &UEPMContext, package: &str) -> Result<(), UepmE
         } else {
             std::fs::remove_dir_all(&plugin_dir)?;
         }
-        crate::output::print_success(&format!("Removed {}", plugin_dir_name(package)));
+        crate::output::print_success(&format!("Removed {dir_name}"));
     } else {
-        crate::output::print_warn(&format!(
-            "{} was not found in UEPMPlugins/",
-            plugin_dir_name(package)
-        ));
+        crate::output::print_warn(&format!("{dir_name} was not found in UEPMPlugins/"));
     }
 
     remove_plugin(&ctx.project_dir, package)?;

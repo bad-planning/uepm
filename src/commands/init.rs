@@ -11,29 +11,26 @@ pub async fn run(ctx: &UEPMContext, yes: bool) -> Result<(), UepmError> {
     run_init_with_commit(&ctx.project_dir, commit).await
 }
 
-fn detect_p4(project_dir: &Path) -> bool {
-    if std::env::var("P4PORT").is_ok() || std::env::var("P4CONFIG").is_ok() {
-        return true;
-    }
-    let mut dir = Some(project_dir.to_path_buf());
+/// Walk up from `start` (inclusive) and return `true` as soon as `predicate` matches a directory.
+fn find_up(start: &Path, predicate: impl Fn(&Path) -> bool) -> bool {
+    let mut dir = Some(start);
     while let Some(d) = dir {
-        if d.join(".p4config").exists() {
+        if predicate(d) {
             return true;
         }
-        dir = d.parent().map(|p| p.to_path_buf());
+        dir = d.parent();
     }
     false
 }
 
+fn detect_p4(project_dir: &Path) -> bool {
+    std::env::var("P4PORT").is_ok()
+        || std::env::var("P4CONFIG").is_ok()
+        || find_up(project_dir, |d| d.join(".p4config").exists())
+}
+
 fn detect_git(project_dir: &Path) -> bool {
-    let mut dir = Some(project_dir.to_path_buf());
-    while let Some(d) = dir {
-        if d.join(".git").is_dir() {
-            return true;
-        }
-        dir = d.parent().map(|p| p.to_path_buf());
-    }
-    false
+    find_up(project_dir, |d| d.join(".git").is_dir())
 }
 
 fn select_commit_plugins(project_dir: &Path, yes: bool) -> Result<bool, UepmError> {
@@ -51,7 +48,7 @@ fn select_commit_plugins(project_dir: &Path, yes: bool) -> Result<bool, UepmErro
         .with_prompt("Commit UEPMPlugins to version control? (no = add to .gitignore/.p4ignore)")
         .default(default)
         .interact()
-        .map_err(|e| UepmError::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
+        .map_err(|e| UepmError::Io(std::io::Error::other(e.to_string())))
 }
 
 pub async fn run_init_with_commit(project_dir: &Path, commit_plugins: bool) -> Result<(), UepmError> {
