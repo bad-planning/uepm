@@ -2,6 +2,8 @@ use crate::errors::UepmError;
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
+/// Find the first `.uproject` file in `dir` alphabetically.
+/// Returns an error if none is found.
 pub fn find_uproject(dir: &Path) -> Result<PathBuf, UepmError> {
     let mut found: Vec<PathBuf> = std::fs::read_dir(dir)?
         .filter_map(|e| e.ok())
@@ -21,6 +23,7 @@ pub fn find_uproject(dir: &Path) -> Result<PathBuf, UepmError> {
     })
 }
 
+/// Read `EngineAssociation` from a `.uproject` file.
 pub fn get_engine_association(uproject_path: &Path) -> Result<String, UepmError> {
     let content = std::fs::read_to_string(uproject_path)?;
     let value: Value = serde_json::from_str(&content)?;
@@ -30,6 +33,8 @@ pub fn get_engine_association(uproject_path: &Path) -> Result<String, UepmError>
         .ok_or_else(|| UepmError::ManifestParse("Missing EngineAssociation".to_string()))
 }
 
+/// Append `dir_name` to `AdditionalPluginDirectories` in the `.uproject` file.
+/// Idempotent — does nothing if the entry already exists.
 pub fn add_plugin_directory(uproject_path: &Path, dir_name: &str) -> Result<(), UepmError> {
     let content = std::fs::read_to_string(uproject_path)?;
     let mut value: Value = serde_json::from_str(&content)?;
@@ -52,6 +57,7 @@ pub fn add_plugin_directory(uproject_path: &Path, dir_name: &str) -> Result<(), 
     Ok(())
 }
 
+/// Returns `true` if `s` looks like a launcher-installed engine GUID (`{...}`).
 pub fn is_guid(s: &str) -> bool {
     s.starts_with('{') && s.ends_with('}')
 }
@@ -84,7 +90,10 @@ mod tests {
     #[test]
     fn test_add_plugin_directory() {
         let dir = tempdir().unwrap();
-        write_uproject(dir.path(), json!({ "EngineAssociation": "5.3", "AdditionalPluginDirectories": [] }));
+        write_uproject(
+            dir.path(),
+            json!({ "EngineAssociation": "5.3", "AdditionalPluginDirectories": [] }),
+        );
         let path = find_uproject(dir.path()).unwrap();
         add_plugin_directory(&path, "UEPMPlugins").unwrap();
         let content = std::fs::read_to_string(&path).unwrap();
@@ -94,7 +103,10 @@ mod tests {
     #[test]
     fn test_add_plugin_directory_idempotent() {
         let dir = tempdir().unwrap();
-        write_uproject(dir.path(), json!({ "EngineAssociation": "5.3", "AdditionalPluginDirectories": ["UEPMPlugins"] }));
+        write_uproject(
+            dir.path(),
+            json!({ "EngineAssociation": "5.3", "AdditionalPluginDirectories": ["UEPMPlugins"] }),
+        );
         let path = find_uproject(dir.path()).unwrap();
         add_plugin_directory(&path, "UEPMPlugins").unwrap();
         let content = std::fs::read_to_string(&path).unwrap();

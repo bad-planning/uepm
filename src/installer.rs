@@ -4,6 +4,9 @@ use bytes::Bytes;
 use sha2::{Digest, Sha512};
 use std::path::Path;
 
+/// Download a tarball from `tarball_url`, verify its `sha512` integrity string,
+/// and extract it into `uepm_plugins_dir/<plugin_name>/`.
+/// The npm `package/` prefix inside the tarball is stripped on extraction.
 pub async fn download_and_extract(
     tarball_url: &str,
     integrity: &str,
@@ -93,7 +96,8 @@ fn extract_tarball(data: &[u8], dest: &Path) -> Result<(), UepmError> {
     Ok(())
 }
 
-/// Create a symlink at `uepm_plugins_dir/<plugin_dir_name>` pointing to `src`.
+/// Create a symlink at `uepm_plugins_dir/<plugin_dir_name>` pointing directly at `src`,
+/// so edits to the local plugin directory are immediately visible without reinstalling.
 /// Returns the version read from the first `.uplugin` file in `src`, or `"0.0.0"`.
 /// Any existing entry at the destination (symlink, file, or directory) is replaced.
 pub fn symlink_local(

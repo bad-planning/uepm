@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 
+/// Tracks all UEPM-managed plugins at their resolved versions.
+/// Serialized to `uepm.lock` as JSON.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LockFile {
     pub version: u32,
@@ -11,21 +13,24 @@ pub struct LockFile {
 
 impl Default for LockFile {
     fn default() -> Self {
-        LockFile {
-            version: 1,
-            plugins: HashMap::new(),
-        }
+        LockFile { version: 1, plugins: HashMap::new() }
     }
 }
 
+/// The locked state of a single installed plugin.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LockedPlugin {
+    /// Exact resolved version string (e.g. `"1.2.3"`).
     pub resolved: String,
+    /// Tarball URL used to download this version, or `"file:<path>"` for local installs.
     pub tarball: String,
+    /// `sha512-<base64>` integrity string; empty for `file:` installs.
     pub sha512: String,
+    /// Transitive UEPM deps declared in this plugin's own `Config/UEPM.ini`.
     pub dependencies: HashMap<String, String>,
 }
 
+/// Read `uepm.lock` from `project_dir`. Returns `None` if the file doesn't exist yet.
 pub fn read_lockfile(project_dir: &Path) -> Result<Option<LockFile>, UepmError> {
     let path = project_dir.join("uepm.lock");
     if !path.exists() {
@@ -36,6 +41,7 @@ pub fn read_lockfile(project_dir: &Path) -> Result<Option<LockFile>, UepmError> 
     Ok(Some(lock))
 }
 
+/// Write `lock` to `uepm.lock` in `project_dir`, pretty-printed.
 pub fn write_lockfile(project_dir: &Path, lock: &LockFile) -> Result<(), UepmError> {
     let path = project_dir.join("uepm.lock");
     let content = serde_json::to_string_pretty(lock)?;
@@ -54,7 +60,8 @@ mod tests {
             "@acme/cool-plugin".to_string(),
             LockedPlugin {
                 resolved: "1.0.3".to_string(),
-                tarball: "https://registry.npmjs.org/@acme/cool-plugin/-/cool-plugin-1.0.3.tgz".to_string(),
+                tarball: "https://registry.npmjs.org/@acme/cool-plugin/-/cool-plugin-1.0.3.tgz"
+                    .to_string(),
                 sha512: "abc123".to_string(),
                 dependencies: HashMap::new(),
             },

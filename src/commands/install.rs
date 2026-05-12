@@ -6,11 +6,15 @@ use crate::resolver::resolve_and_install;
 use std::collections::HashMap;
 use std::path::Path;
 
+/// Entry point for `uepm install`. Delegates to [`run_install`] using the current directory.
 pub async fn run(packages: Vec<String>) -> Result<(), UepmError> {
     let project_dir = std::env::current_dir()?;
     run_install(&packages, &project_dir).await
 }
 
+/// Install `packages` into `project_dir`. If `packages` is empty, installs everything
+/// listed in `Config/UEPM.ini`. New packages are pinned to `^<resolved>` and written
+/// back to the manifest.
 pub async fn run_install(packages: &[String], project_dir: &Path) -> Result<(), UepmError> {
     let uepm_plugins_dir = project_dir.join("UEPMPlugins");
     if !uepm_plugins_dir.exists() {

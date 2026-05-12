@@ -28,14 +28,16 @@ struct TomlSettings {
     commit_plugins: bool,
 }
 
-fn manifest_path(project_dir: &Path) -> std::path::PathBuf {
-    project_dir.join("Config").join("UEPM.ini")
-}
-
+/// Returns `true` if `Config/UEPM.ini` already exists in `project_dir`.
 pub fn manifest_exists(project_dir: &Path) -> bool {
     manifest_path(project_dir).exists()
 }
 
+fn manifest_path(project_dir: &Path) -> std::path::PathBuf {
+    project_dir.join("Config").join("UEPM.ini")
+}
+
+/// Parse `Config/UEPM.ini` into a [`ProjectManifest`].
 pub fn read_manifest(project_dir: &Path) -> Result<ProjectManifest, UepmError> {
     let path = manifest_path(project_dir);
     let content = std::fs::read_to_string(&path)?;
@@ -49,6 +51,7 @@ pub fn read_manifest(project_dir: &Path) -> Result<ProjectManifest, UepmError> {
     })
 }
 
+/// Serialize `manifest` and write it to `Config/UEPM.ini`, creating `Config/` if needed.
 pub fn write_manifest(project_dir: &Path, manifest: &ProjectManifest) -> Result<(), UepmError> {
     let path = manifest_path(project_dir);
     if let Some(parent) = path.parent() {
@@ -69,6 +72,7 @@ pub fn write_manifest(project_dir: &Path, manifest: &ProjectManifest) -> Result<
     Ok(())
 }
 
+/// Create a fresh `Config/UEPM.ini` with no plugins. Safe to call when the file doesn't exist yet.
 pub fn create_manifest(
     project_dir: &Path,
     engine_version: Option<&str>,
@@ -84,12 +88,14 @@ pub fn create_manifest(
     )
 }
 
+/// Add or update a plugin entry in `Config/UEPM.ini`.
 pub fn add_plugin(project_dir: &Path, package: &str, range: &str) -> Result<(), UepmError> {
     let mut manifest = read_manifest(project_dir)?;
     manifest.plugins.insert(package.to_string(), range.to_string());
     write_manifest(project_dir, &manifest)
 }
 
+/// Remove a plugin entry from `Config/UEPM.ini`. No-ops if the package isn't listed.
 pub fn remove_plugin(project_dir: &Path, package: &str) -> Result<(), UepmError> {
     let mut manifest = read_manifest(project_dir)?;
     manifest.plugins.remove(package);

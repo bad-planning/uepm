@@ -20,7 +20,7 @@ Or grab a binary directly from [Releases](https://github.com/bad-planning/uepm/r
 
 ```sh
 cd YourUnrealProject    # directory containing a .uproject file
-uepm init               # creates uepm.ini, UEPMPlugins/, modifies .uproject
+uepm init               # creates Config/UEPM.ini, UEPMPlugins/, modifies .uproject
 uepm install @acme/cool-plugin
 ```
 
@@ -28,36 +28,27 @@ uepm install @acme/cool-plugin
 
 | Command | Description |
 |---|---|
-| `uepm init [--yes]` | Initialize a project. Detects VCS, prompts for install mode. `--yes` accepts defaults. |
-| `uepm install [@scope/pkg[@ver] ...]` | Install plugins. No args installs everything in `uepm.ini`. |
-| `uepm uninstall @scope/pkg` | Remove a plugin and update `uepm.ini`. |
+| `uepm init [--yes]` | Initialize a project. Detects VCS, prompts whether to commit `UEPMPlugins/`. `--yes` accepts defaults. |
+| `uepm install [@scope/pkg[@ver] ...]` | Install plugins. No args installs everything in `Config/UEPM.ini`. |
+| `uepm uninstall @scope/pkg` | Remove a plugin and update `Config/UEPM.ini`. |
 | `uepm update [@scope/pkg]` | Update one or all plugins to latest compatible versions. |
 | `uepm list` | Show installed plugins and engine compatibility status. |
 
-### Install modes
-
-Chosen during `uepm init`, stored in `uepm.ini`. UEPM detects your VCS and suggests the right default.
-
-| Mode | Behavior | When it's the default |
-|---|---|---|
-| `symlink` | Symlinks in `UEPMPlugins/` pointing into a cache | Git repo |
-| `copy` | Real files copied into `UEPMPlugins/` | Perforce or Windows |
-| `none` | UEPM manages `uepm.ini`/`uepm.lock` only | Manual preference |
-
-`copy` mode produces real files that can be checked into Perforce.
-
 ## Project files
 
-**`uepm.ini`** — human-edited, check this in:
-```ini
-[settings]
-engine_version = 5.4
-install_mode = symlink
+**`Config/UEPM.ini`** — human-edited, check this in:
+```toml
+[Settings]
+EngineVersion = "5.4"
+CommitPlugins = false
 
-[plugins]
-@acme/cool-plugin = ^1.2.0
-@acme/base-utils = ^2.0.0
+[Plugins]
+"@acme/cool-plugin" = "^1.2.0"
+"@acme/base-utils" = "^2.0.0"
 ```
+
+`CommitPlugins = false` means `UEPMPlugins/` is gitignored and restored by `uepm install` after clone.
+Set to `true` to check the installed plugins into version control (recommended for Perforce).
 
 **`uepm.lock`** — machine-generated, check this in:
 ```json
@@ -101,7 +92,18 @@ Plugin authoring tooling (`uepm publish`, `uepm new`) is planned for Phase 2.
 
 ## Plugin dependencies
 
-A plugin can declare its own UEPM dependencies in a `uepm.ini` at its package root. UEPM reads this after extraction and installs those deps recursively, with conflict detection.
+A plugin can declare its own UEPM dependencies in a `Config/UEPM.ini` at its package root. UEPM reads this after extraction and installs those deps recursively, with conflict detection.
+
+### Local development
+
+Use `file:` paths to work against local plugin source without publishing:
+
+```toml
+[Plugins]
+"@acme/cool-plugin" = "file:../plugins/cool-plugin"
+```
+
+`file:` deps create a symlink in `UEPMPlugins/` pointing at the source directory — edits are visible immediately.
 
 ## Environment variables
 

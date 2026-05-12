@@ -11,6 +11,7 @@ pub struct PluginEntry {
     pub compatible: Option<bool>,
 }
 
+/// Entry point for `uepm list`. Prints all plugins and their engine compatibility.
 pub async fn run() -> Result<(), UepmError> {
     let project_dir = std::env::current_dir()?;
     let plugins = list_plugins(&project_dir)?;
@@ -37,6 +38,8 @@ pub async fn run() -> Result<(), UepmError> {
     Ok(())
 }
 
+/// Build the list of plugins from `Config/UEPM.ini` and `uepm.lock`,
+/// annotating each with its resolved version and engine compatibility.
 pub fn list_plugins(project_dir: &Path) -> Result<Vec<PluginEntry>, UepmError> {
     let manifest = read_manifest(project_dir)?;
     let lock = read_lockfile(project_dir)?.unwrap_or_default();

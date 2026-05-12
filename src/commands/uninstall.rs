@@ -3,11 +3,13 @@ use crate::manifest::remove_plugin;
 use crate::resolver::plugin_dir_name;
 use std::path::Path;
 
+/// Entry point for `uepm uninstall`. Delegates to [`run_uninstall`] using the current directory.
 pub async fn run(package: String) -> Result<(), UepmError> {
     let project_dir = std::env::current_dir()?;
     run_uninstall(&package, &project_dir).await
 }
 
+/// Remove `package` from `UEPMPlugins/` and from `Config/UEPM.ini`.
 pub async fn run_uninstall(package: &str, project_dir: &Path) -> Result<(), UepmError> {
     let uepm_dir = project_dir.join("UEPMPlugins");
     let plugin_dir = uepm_dir.join(plugin_dir_name(package));

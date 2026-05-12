@@ -20,23 +20,23 @@ UEPM is a standalone Rust binary that manages Unreal Engine plugins via the npm 
 - `src/main.rs` — clap CLI, tokio main, dotenvy + tracing init
 - `src/lib.rs` — re-exports all modules for integration testing
 
-**Core flow:** `uepm init` → creates `uepm.ini` + `UEPMPlugins/` → `uepm install @scope/pkg` → registry fetch → sha512-verified tarball extract → `uepm.lock` written.
+**Core flow:** `uepm init` → creates `Config/UEPM.ini` + `UEPMPlugins/` → `uepm install @scope/pkg` → registry fetch → sha512-verified tarball extract → `uepm.lock` written.
 
 ### Modules
 
 | Module | Purpose |
 |---|---|
-| `manifest` | Read/write `uepm.ini` via `configparser`. `[settings]` + `[plugins]` sections. |
+| `manifest` | Read/write `Config/UEPM.ini` via `toml` + serde. `[Settings]` + `[Plugins]` sections. |
 | `lockfile` | Read/write `uepm.lock` (JSON). Reproducible installs via locked tarballs. |
 | `uproject` | Find, read, and modify `.uproject` JSON (plugin directory injection). |
 | `registry` | `RegistryClient` — fetch npm package metadata, semver range resolution. |
 | `installer` | Download tarball, verify sha512 integrity, extract stripping `package/` prefix. |
-| `resolver` | Recursive install with conflict detection. Reads plugin's own `uepm.ini` for transitive deps. |
+| `resolver` | Recursive install with conflict detection. Reads plugin's own `Config/UEPM.ini` for transitive deps. |
 | `output` | crossterm-colored `print_success` / `print_warn` / `print_error` / `print_info`. |
 | `errors` | `UepmError` enum (thiserror derives). |
-| `commands/init` | VCS detection (`P4PORT`, `.p4config`, `.git`), `InstallMode` enum, dialoguer select. |
-| `commands/install` | Parse `@scope/pkg@ver` specs, resolve+install, update `uepm.ini` + `uepm.lock`. |
-| `commands/uninstall` | Remove `UEPMPlugins/<name>/`, update `uepm.ini`. |
+| `commands/init` | VCS detection (`P4PORT`, `.p4config`, `.git`), `commit_plugins` confirm prompt, writes `.gitignore`/`.p4ignore`. |
+| `commands/install` | Parse `@scope/pkg@ver` specs, resolve+install, update `Config/UEPM.ini` + `uepm.lock`. |
+| `commands/uninstall` | Remove `UEPMPlugins/<name>/`, update `Config/UEPM.ini`. |
 | `commands/update` | Re-resolve all/one plugin ignoring lockfile, rewrite `uepm.lock`. |
 | `commands/list` | Read manifest + lockfile, print compatibility status. |
 
@@ -57,3 +57,7 @@ install.ps1             — Windows install script (irm | iex)
 - Unit tests live in each module (`#[cfg(test)] mod tests`)
 - `tests/install_integration.rs` is the integration test — uses `mockito::Server` for a fake npm registry and `tempfile::tempdir` for isolation
 - `UEPM_REGISTRY` env var overrides the registry URL in tests
+
+## Before Every Commit
+
+Re-evaluate whether the README needs updating to reflect the changes being committed — especially the Commands table, Project files section, and any env var or install flow changes.

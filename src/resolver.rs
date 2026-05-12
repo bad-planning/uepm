@@ -6,10 +6,14 @@ use crate::registry::RegistryClient;
 use std::collections::HashMap;
 use std::path::Path;
 
+/// Derive the `UEPMPlugins/` subdirectory name from a package identifier.
+/// `"@acme/cool-plugin"` → `"cool-plugin"`, `"my-plugin"` → `"my-plugin"`.
 pub fn plugin_dir_name(package: &str) -> &str {
     package.split('/').last().unwrap_or(package)
 }
 
+/// Verify that `resolved_version` satisfies `required_range`.
+/// Returns a [`UepmError::VersionConflict`] if not.
 pub fn check_conflict(
     package: &str,
     resolved_version: &str,
@@ -37,6 +41,9 @@ pub fn check_conflict(
     Ok(())
 }
 
+/// Resolve and install `package` at `range`, then recursively resolve any transitive
+/// UEPM dependencies declared in the installed plugin's own `Config/UEPM.ini`.
+/// `resolved` tracks already-installed packages within this session to detect conflicts.
 pub async fn resolve_and_install(
     package: &str,
     range: &str,

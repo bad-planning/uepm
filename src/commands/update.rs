@@ -5,6 +5,8 @@ use crate::registry::RegistryClient;
 use crate::resolver::resolve_and_install;
 use std::collections::HashMap;
 
+/// Re-resolve and reinstall plugins, ignoring the lockfile so fresh versions are fetched.
+/// If `package` is `Some`, updates only that plugin; otherwise updates all.
 pub async fn run(package: Option<String>) -> Result<(), UepmError> {
     let project_dir = std::env::current_dir()?;
     let manifest = read_manifest(&project_dir)?;

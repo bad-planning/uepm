@@ -28,6 +28,7 @@ struct NpmDist {
     integrity: String,
 }
 
+/// HTTP client for an npm-compatible registry.
 pub struct RegistryClient {
     base_url: String,
     token: Option<String>,
@@ -35,6 +36,7 @@ pub struct RegistryClient {
 }
 
 impl RegistryClient {
+    /// Create a client pointing at `base_url`, with an optional bearer `token`.
     pub fn new(base_url: &str, token: Option<String>) -> Self {
         RegistryClient {
             base_url: base_url.trim_end_matches('/').to_string(),
@@ -43,6 +45,8 @@ impl RegistryClient {
         }
     }
 
+    /// Create a client from `UEPM_REGISTRY` and `UEPM_TOKEN` env vars,
+    /// defaulting to `https://registry.npmjs.org`.
     pub fn from_env() -> Self {
         let base_url = std::env::var("UEPM_REGISTRY")
             .unwrap_or_else(|_| "https://registry.npmjs.org".to_string());
@@ -50,6 +54,7 @@ impl RegistryClient {
         Self::new(&base_url, token)
     }
 
+    /// Fetch metadata for the `latest` dist-tag of `package`.
     pub async fn fetch_metadata(&self, package: &str) -> Result<PackageMetadata, UepmError> {
         let encoded = urlencoding::encode(package).into_owned();
         let url = format!("{}/{}", self.base_url, encoded);
@@ -94,6 +99,7 @@ impl RegistryClient {
         })
     }
 
+    /// Fetch metadata for the highest version of `package` that satisfies `range`.
     pub async fn fetch_metadata_for_version(
         &self,
         package: &str,
@@ -130,6 +136,7 @@ impl RegistryClient {
     }
 }
 
+/// Return the highest version string from `versions` that satisfies `range`.
 pub fn resolve_best_version(versions: &[String], range: &str) -> Result<String, UepmError> {
     let req = semver::VersionReq::parse(range).map_err(|e| UepmError::InvalidSemver {
         range: range.to_string(),
