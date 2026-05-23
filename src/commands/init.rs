@@ -52,8 +52,8 @@ fn engine_range_from_version(v: &str) -> String {
     let parts: Vec<&str> = v.splitn(3, '.').collect();
     let major: u64 = parts.first().and_then(|s| s.parse().ok()).unwrap_or(5);
     let minor: &str = parts.get(1).unwrap_or(&"0");
-    format!(">={}  <{}.0.0", format!("{major}.{minor}.0"), major + 1)
-        .replace("  ", " ")
+    format!(">={}  , <{}.0.0", format!("{major}.{minor}.0"), major + 1)
+        .replace("  ", "")
 }
 
 /// Read fields from a `.uplugin` JSON file. Missing keys return empty strings.
@@ -84,7 +84,7 @@ fn resolve_engine_range(yes: bool) -> Result<String, UepmError> {
     let engines = find_installed_engines();
 
     if engines.is_empty() {
-        return prompt_field("Engine compatibility range", ">=5.3.0 <6.0.0", yes);
+        return prompt_field("Engine compatibility range", ">=5.3.0, <6.0.0", yes);
     }
 
     if engines.len() == 1 {
@@ -413,9 +413,9 @@ mod tests {
 
     #[test]
     fn test_engine_range_from_version() {
-        assert_eq!(engine_range_from_version("5.7.4"), ">=5.7.0 <6.0.0");
-        assert_eq!(engine_range_from_version("5.3.0"), ">=5.3.0 <6.0.0");
-        assert_eq!(engine_range_from_version("4.27.2"), ">=4.27.0 <5.0.0");
+        assert_eq!(engine_range_from_version("5.7.4"), ">=5.7.0, <6.0.0");
+        assert_eq!(engine_range_from_version("5.3.0"), ">=5.3.0, <6.0.0");
+        assert_eq!(engine_range_from_version("4.27.2"), ">=4.27.0, <5.0.0");
     }
 
     #[tokio::test]
