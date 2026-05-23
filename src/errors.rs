@@ -36,4 +36,16 @@ pub enum UepmError {
 
     #[error("Interactive terminal required. Run with --yes to use detected defaults.")]
     InteractiveRequired,
+
+    #[error("No [Package] section found in Config/UEPM.ini. Run 'uepm init' first.")]
+    NoPackageMetadata,
+
+    #[error("Invalid value for '{field}': {message}")]
+    InvalidPackageField { field: String, message: String },
+
+    #[error("Publish failed: {0}")]
+    PublishFailed(String),
+
+    #[error("UEPM_TOKEN is not set. Export it before publishing.")]
+    TokenRequired,
 }
