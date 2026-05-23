@@ -27,7 +27,11 @@ case "$OS" in
     ;;
 esac
 
-LATEST=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+if [ -n "${UEPM_VERSION:-}" ]; then
+  LATEST="$UEPM_VERSION"
+else
+  LATEST=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name"' | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+fi
 
 echo "Installing uepm $LATEST..."
 

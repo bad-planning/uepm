@@ -9,7 +9,11 @@ $Arch = if ([System.Environment]::Is64BitOperatingSystem) { "x86_64" } else {
 }
 $Artifact = "uepm-windows-$Arch.exe"
 
-$Latest = (Invoke-RestMethod "https://api.github.com/repos/$Repo/releases/latest").tag_name
+$Latest = if ($env:UEPM_VERSION) {
+    $env:UEPM_VERSION
+} else {
+    (Invoke-RestMethod "https://api.github.com/repos/$Repo/releases/latest").tag_name
+}
 Write-Host "Installing uepm $Latest..."
 
 $Url = "https://github.com/$Repo/releases/download/$Latest/$Artifact"
