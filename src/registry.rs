@@ -54,6 +54,10 @@ impl RegistryClient {
         Self::new(&base_url, token)
     }
 
+    pub fn base_url(&self) -> &str {
+        &self.base_url
+    }
+
     /// Fetch and parse the full npm package document for `package`.
     /// Returns [`UepmError::PackageNotFound`] on a 404 response.
     async fn fetch_package(&self, package: &str) -> Result<NpmPackage, UepmError> {

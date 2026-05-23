@@ -32,6 +32,21 @@ enum Commands {
     },
     /// List installed plugins and compatibility status
     List,
+    /// Publish this plugin to the npm registry
+    Publish {
+        /// npm dist-tag (default: latest)
+        #[arg(long, default_value = "latest")]
+        tag: String,
+        /// Validate and build tarball but do not upload
+        #[arg(long)]
+        dry_run: bool,
+        /// Skip confirmation prompt
+        #[arg(short, long)]
+        yes: bool,
+        /// Registry access level
+        #[arg(long, default_value = "public")]
+        access: String,
+    },
 }
 
 #[tokio::main]
@@ -57,6 +72,9 @@ async fn main() {
         Commands::Uninstall { package } => uepm::commands::uninstall::run(&ctx, package).await,
         Commands::Update { package } => uepm::commands::update::run(&ctx, package).await,
         Commands::List => uepm::commands::list::run(&ctx).await,
+        Commands::Publish { tag, dry_run, yes, access } => {
+            uepm::commands::publish::run(&ctx, &tag, dry_run, yes, &access).await
+        }
     };
 
     if let Err(e) = result {
