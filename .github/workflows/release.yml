@@ -58,6 +58,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
@@ -65,8 +67,32 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - name: Stamp CHANGELOG
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          DATE=$(date +%Y-%m-%d)
+          # Replace [Unreleased] heading with versioned heading
+          sed -i "s/^## \[Unreleased\]/## [${VERSION}] - ${DATE}/" CHANGELOG.md
+          # Add a fresh [Unreleased] section at the top
+          sed -i "/^## \[${VERSION}\]/i ## [Unreleased]\n" CHANGELOG.md
+          # Update the [Unreleased] comparison link
+          sed -i "s|\[Unreleased\]:.*|[Unreleased]: https://github.com/adamschlesinger/uepm/compare/v${VERSION}...HEAD\n[${VERSION}]: https://github.com/adamschlesinger/uepm/compare/v$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo ${VERSION})...v${VERSION}|" CHANGELOG.md
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "chore: stamp CHANGELOG for ${GITHUB_REF_NAME}"
+          git push origin HEAD:main
+
+      - name: Extract release notes
+        id: extract
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          # Extract the section for this version between its heading and the next
+          awk "/^## \[${VERSION}\]/{found=1; next} found && /^## /{exit} found{print}" CHANGELOG.md > release_notes.md
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: artifacts/*
-          generate_release_notes: true
+          body_path: release_notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
