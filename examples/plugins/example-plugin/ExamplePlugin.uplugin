@@ -6,7 +6,7 @@
   "Description": "An example Unreal Engine plugin demonstrating NPM distribution pattern",
   "Category": "Other",
   "CreatedBy": "UEPM",
-  "CreatedByURL": "https://github.com/uepm/uepm",
+  "CreatedByURL": "https://github.com/adamschlesinger/uepm",
   "DocsURL": "",
   "MarketplaceURL": "",
   "SupportURL": "",

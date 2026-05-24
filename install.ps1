@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Stop'
 
-$Repo = "bad-planning/uepm"
+$Repo = "adamschlesinger/uepm"
 $InstallDir = "$env:LOCALAPPDATA\uepm\bin"
 
 $Arch = if ([System.Environment]::Is64BitOperatingSystem) { "x86_64" } else {

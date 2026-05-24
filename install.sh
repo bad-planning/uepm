@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 set -e
 
-REPO="bad-planning/uepm"
+REPO="adamschlesinger/uepm"
 INSTALL_DIR="$HOME/.uepm/bin"
 
 OS=$(uname -s)

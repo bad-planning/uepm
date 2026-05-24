@@ -6,15 +6,15 @@ A standalone CLI for managing Unreal Engine plugins via the npm registry. No Nod
 
 **macOS / Linux**
 ```sh
-curl -fsSL https://github.com/bad-planning/uepm/releases/latest/download/install.sh | sh
+curl -fsSL https://github.com/adamschlesinger/uepm/releases/latest/download/install.sh | sh
 ```
 
 **Windows (PowerShell)**
 ```powershell
-irm https://github.com/bad-planning/uepm/releases/latest/download/install.ps1 | iex
+irm https://github.com/adamschlesinger/uepm/releases/latest/download/install.ps1 | iex
 ```
 
-Or grab a binary directly from [Releases](https://github.com/bad-planning/uepm/releases).
+Or grab a binary directly from [Releases](https://github.com/adamschlesinger/uepm/releases).
 
 ## Quick Start
 
