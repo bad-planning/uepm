@@ -44,20 +44,19 @@ pub fn list_plugins(project_dir: &Path) -> Result<Vec<PluginEntry>, UepmError> {
     let manifest = read_manifest(project_dir)?;
     let lock = read_lockfile(project_dir)?.unwrap_or_default();
 
-    let engine_req: Option<semver::VersionReq> = manifest
+    let engine_ver: Option<semver::Version> = manifest
         .engine_version
         .as_deref()
-        .and_then(|v| semver::VersionReq::parse(v).ok());
+        .and_then(|v| semver::Version::parse(v).ok());
 
     let entries = manifest
         .plugins
         .iter()
         .map(|(name, engine_range)| {
             let resolved = lock.plugins.get(name).map(|lp| lp.resolved.clone());
-            let compatible = engine_req.as_ref().and(resolved.as_deref()).and_then(|v| {
-                let ver = semver::Version::parse(v).ok()?;
+            let compatible = engine_ver.as_ref().and_then(|ev| {
                 let req = semver::VersionReq::parse(engine_range).ok()?;
-                Some(req.matches(&ver))
+                Some(req.matches(ev))
             });
             PluginEntry {
                 name: name.clone(),
@@ -74,6 +73,8 @@ pub fn list_plugins(project_dir: &Path) -> Result<Vec<PluginEntry>, UepmError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::lockfile::{LockedPlugin, LockFile, write_lockfile};
+    use std::collections::HashMap;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -98,5 +99,80 @@ mod tests {
         let plugins = list_plugins(dir.path()).unwrap();
         assert_eq!(plugins.len(), 1);
         assert_eq!(plugins[0].name, "@acme/cool-plugin");
+    }
+
+    #[test]
+    fn test_list_compatible_when_engine_version_satisfies_plugin_range() {
+        let dir = tempdir().unwrap();
+        std::fs::create_dir(dir.path().join("Config")).unwrap();
+        // Project is on engine 5.3, plugin requires >=5.0.0, <6.0.0
+        std::fs::write(
+            dir.path().join("Config/UEPM.ini"),
+            "[Settings]\nEngineVersion = \"5.3.0\"\n\n[Dependencies]\n\"@acme/my-plugin\" = \">=5.0.0, <6.0.0\"\n",
+        )
+        .unwrap();
+
+        // Write a lockfile so resolved version is known
+        let mut lock = LockFile::default();
+        lock.plugins.insert(
+            "@acme/my-plugin".to_string(),
+            LockedPlugin {
+                resolved: "1.2.0".to_string(),
+                tarball: "https://example.com/tarball.tgz".to_string(),
+                sha512: "sha512-abc".to_string(),
+                dependencies: HashMap::new(),
+            },
+        );
+        write_lockfile(dir.path(), &lock).unwrap();
+
+        let plugins = list_plugins(dir.path()).unwrap();
+        assert_eq!(plugins.len(), 1);
+        assert_eq!(plugins[0].compatible, Some(true),
+            "engine 5.3.0 should satisfy >=5.0.0, <6.0.0");
+    }
+
+    #[test]
+    fn test_list_incompatible_when_engine_version_fails_plugin_range() {
+        let dir = tempdir().unwrap();
+        std::fs::create_dir(dir.path().join("Config")).unwrap();
+        // Project is on engine 4.27, plugin requires >=5.0.0
+        std::fs::write(
+            dir.path().join("Config/UEPM.ini"),
+            "[Settings]\nEngineVersion = \"4.27.0\"\n\n[Dependencies]\n\"@acme/my-plugin\" = \">=5.0.0, <6.0.0\"\n",
+        )
+        .unwrap();
+
+        let mut lock = LockFile::default();
+        lock.plugins.insert(
+            "@acme/my-plugin".to_string(),
+            LockedPlugin {
+                resolved: "1.2.0".to_string(),
+                tarball: "https://example.com/tarball.tgz".to_string(),
+                sha512: "sha512-abc".to_string(),
+                dependencies: HashMap::new(),
+            },
+        );
+        write_lockfile(dir.path(), &lock).unwrap();
+
+        let plugins = list_plugins(dir.path()).unwrap();
+        assert_eq!(plugins.len(), 1);
+        assert_eq!(plugins[0].compatible, Some(false),
+            "engine 4.27.0 should NOT satisfy >=5.0.0, <6.0.0");
+    }
+
+    #[test]
+    fn test_list_unknown_compat_when_no_engine_version_set() {
+        let dir = tempdir().unwrap();
+        std::fs::create_dir(dir.path().join("Config")).unwrap();
+        // No EngineVersion in Settings
+        std::fs::write(
+            dir.path().join("Config/UEPM.ini"),
+            "[Dependencies]\n\"@acme/my-plugin\" = \">=5.0.0, <6.0.0\"\n",
+        )
+        .unwrap();
+
+        let plugins = list_plugins(dir.path()).unwrap();
+        assert_eq!(plugins[0].compatible, None,
+            "no engine version means compatibility is unknown");
     }
 }
