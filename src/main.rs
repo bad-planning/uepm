@@ -3,7 +3,7 @@ use tracing_subscriber::EnvFilter;
 use uepm::context::UEPMContext;
 
 #[derive(Parser)]
-#[command(name = "uepm", version, about = "Unreal Engine Package Manager")]
+#[command(name = "uepm", version, about = "Unreal Engine Plugin Manager")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,

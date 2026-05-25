@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 
-/// Metadata written by plugin *authors* in the `[Package]` section of `Config/UEPM.ini`.
+/// Metadata written by plugin *authors* in the `[Plugin]` section of `Config/UEPM.ini`.
 /// All fields are required for `uepm publish`.
 #[derive(Debug, Default, Clone)]
 pub struct PackageMetadata {
@@ -36,9 +36,9 @@ pub struct ProjectManifest {
 struct TomlManifest {
     #[serde(rename = "Settings", default)]
     settings: TomlSettings,
-    #[serde(rename = "Package", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "Plugin", skip_serializing_if = "Option::is_none")]
     package: Option<TomlPackage>,
-    #[serde(rename = "Plugins", default)]
+    #[serde(rename = "Dependencies", default)]
     plugins: HashMap<String, String>,
 }
 
@@ -147,15 +147,15 @@ pub fn create_manifest(
     )
 }
 
-/// Read only the `[Package]` section from `Config/UEPM.ini`.
+/// Read only the `[Plugin]` section from `Config/UEPM.ini`.
 /// Returns `Err(UepmError::NoPackageMetadata)` if the section is absent.
 pub fn read_package_metadata(project_dir: &Path) -> Result<PackageMetadata, UepmError> {
     let manifest = read_manifest(project_dir)?;
     manifest.package.ok_or(UepmError::NoPackageMetadata)
 }
 
-/// Write (or overwrite) the `[Package]` section in `Config/UEPM.ini`,
-/// leaving `[Settings]` and `[Plugins]` untouched.
+/// Write (or overwrite) the `[Plugin]` section in `Config/UEPM.ini`,
+/// leaving `[Settings]` and `[Dependencies]` untouched.
 pub fn write_package_metadata(project_dir: &Path, meta: &PackageMetadata) -> Result<(), UepmError> {
     let mut manifest = if manifest_exists(project_dir) {
         read_manifest(project_dir)?
@@ -194,7 +194,7 @@ mod tests {
 EngineVersion = "5.7"
 CommitPlugins = false
 
-[Plugins]
+[Dependencies]
 "@acme/cool-plugin" = "^1.0.0"
 "@studio/other" = "~2.1.0"
 "#,
@@ -291,7 +291,7 @@ CommitPlugins = false
         let dir = tempdir().unwrap();
         create_manifest(dir.path(), Some("5.4"), false).unwrap();
         let content = fs::read_to_string(dir.path().join("Config/UEPM.ini")).unwrap();
-        assert!(!content.contains("[Package]"));
+        assert!(!content.contains("[Plugin]"));
 
         // Reading it also returns None for .package
         let m = read_manifest(dir.path()).unwrap();

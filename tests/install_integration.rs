@@ -31,7 +31,7 @@ fn sha512_integrity(data: &[u8]) -> String {
 async fn test_install_single_plugin() {
     let dir = tempdir().unwrap();
     std::fs::create_dir(dir.path().join("Config")).unwrap();
-    std::fs::write(dir.path().join("Config/UEPM.ini"), "[Plugins]\n# empty\n").unwrap();
+    std::fs::write(dir.path().join("Config/UEPM.ini"), "[Dependencies]\n# empty\n").unwrap();
 
     let tarball = make_fake_tarball();
     let integrity = sha512_integrity(&tarball);

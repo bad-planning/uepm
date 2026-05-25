@@ -71,7 +71,7 @@ fn is_excluded_dir(name: &str) -> bool {
 /// Always excluded files / patterns.
 fn is_excluded_file(name: &str) -> bool {
     // Note: Config/UEPM.ini is intentionally included — consumers need the
-    // [Plugins] section to resolve transitive dependencies after extraction.
+    // [Dependencies] section to resolve transitive dependencies after extraction.
     name.ends_with(".lock")
         || name.starts_with(".npmrc")
         || name.starts_with(".env")
@@ -260,7 +260,7 @@ mod tests {
 
     #[test]
     fn test_uepm_ini_included_for_transitive_dep_resolution() {
-        // Config/UEPM.ini must be packed so consumers can read [Plugins]
+        // Config/UEPM.ini must be packed so consumers can read [Dependencies]
         // and install transitive dependencies after extraction.
         let dir = tempdir().unwrap();
         create_tree(

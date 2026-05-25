@@ -1,4 +1,4 @@
-# UEPM — Unreal Engine Package Manager
+# UEPM — Unreal Engine Plugin Manager
 
 A standalone CLI for managing Unreal Engine plugins via the npm registry. No Node.js required.
 
@@ -28,7 +28,7 @@ uepm install @acme/cool-plugin
 **Plugin author:**
 ```sh
 cd YourPlugin           # directory containing a .uplugin file
-uepm init               # detects .uplugin, prompts for package metadata, writes [Package]
+uepm init               # detects .uplugin, prompts for plugin metadata, writes [Plugin]
 uepm publish            # builds .tgz, PUTs to registry — no npm required
 ```
 
@@ -36,12 +36,12 @@ uepm publish            # builds .tgz, PUTs to registry — no npm required
 
 | Command | Description |
 |---|---|
-| `uepm init [--yes]` | **Project context** (`.uproject` present): creates `Config/UEPM.ini`, `UEPMPlugins/`, modifies `.uproject`. **Plugin context** (`.uplugin` present): prompts for publish metadata and writes `[Package]` section. |
+| `uepm init [--yes]` | **Project context** (`.uproject` present): creates `Config/UEPM.ini`, `UEPMPlugins/`, modifies `.uproject`. **Plugin context** (`.uplugin` present): prompts for publish metadata and writes `[Plugin]` section. |
 | `uepm install [@scope/pkg[@ver] ...]` | Install plugins. No args installs everything in `Config/UEPM.ini`. |
 | `uepm uninstall @scope/pkg` | Remove a plugin and update `Config/UEPM.ini`. |
 | `uepm update [@scope/pkg]` | Update one or all plugins to latest compatible versions. |
 | `uepm list` | Show installed plugins and engine compatibility status. |
-| `uepm publish [--tag TAG] [--dry-run] [--yes] [--access public\|restricted]` | Publish this plugin to the registry. Reads `[Package]` from `Config/UEPM.ini`. Requires `UEPM_TOKEN`. |
+| `uepm publish [--tag TAG] [--dry-run] [--yes] [--access public\|restricted]` | Publish this plugin to the registry. Reads `[Plugin]` from `Config/UEPM.ini`. Requires `UEPM_TOKEN`. |
 
 ## Project files
 
@@ -51,7 +51,7 @@ uepm publish            # builds .tgz, PUTs to registry — no npm required
 EngineVersion = "5.4"
 CommitPlugins = false
 
-[Plugins]
+[Dependencies]
 "@acme/cool-plugin" = "^1.2.0"
 "@acme/base-utils" = "^2.0.0"
 ```
@@ -76,11 +76,11 @@ Set to `true` to check the installed plugins into version control (recommended f
 
 ## Publishing plugins
 
-Run `uepm init` in your plugin directory to write a `[Package]` section:
+Run `uepm init` in your plugin directory to write a `[Plugin]` section:
 
 ```toml
 # Config/UEPM.ini (inside the plugin source tree)
-[Package]
+[Plugin]
 Name        = "@your-scope/plugin-name"
 Version     = "1.0.0"
 Description = "Does cool things"
@@ -89,7 +89,7 @@ License     = "MIT"
 EngineRange = ">=5.3.0, <6.0.0"
 Main        = "YourPlugin.uplugin"
 
-[Plugins]
+[Dependencies]
 # transitive deps go here
 ```
 
@@ -114,7 +114,7 @@ A plugin can declare its own UEPM dependencies in a `Config/UEPM.ini` at its pac
 Use `file:` paths to work against local plugin source without publishing:
 
 ```toml
-[Plugins]
+[Dependencies]
 "@acme/cool-plugin" = "file:../plugins/cool-plugin"
 ```
 

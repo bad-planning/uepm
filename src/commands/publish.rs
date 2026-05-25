@@ -16,7 +16,7 @@ pub async fn run(
     yes: bool,
     access: &str,
 ) -> Result<(), UepmError> {
-    // ── Step 1: load and validate [Package] ───────────────────────────────────
+    // ── Step 1: load and validate [Plugin] ───────────────────────────────────
     let meta = read_package_metadata(&ctx.project_dir)?;
     validate_metadata(&meta, &ctx.project_dir)?;
 

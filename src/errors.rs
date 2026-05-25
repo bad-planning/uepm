@@ -37,7 +37,7 @@ pub enum UepmError {
     #[error("Interactive terminal required. Run with --yes to use detected defaults.")]
     InteractiveRequired,
 
-    #[error("No [Package] section found in Config/UEPM.ini. Run 'uepm init' first.")]
+    #[error("No [Plugin] section found in Config/UEPM.ini. Run 'uepm init' first.")]
     NoPackageMetadata,
 
     #[error("Invalid value for '{field}': {message}")]

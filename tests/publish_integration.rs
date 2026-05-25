@@ -12,10 +12,10 @@ fn write_uplugin(dir: &std::path::Path, name: &str) {
 }
 
 fn setup_plugin_dir(dir: &std::path::Path, meta: &PackageMetadata) {
-    // Write the .uplugin file that [Package].main points to
+    // Write the .uplugin file that [Plugin].main points to
     let uplugin_name = meta.main.trim_end_matches(".uplugin");
     write_uplugin(dir, uplugin_name);
-    // Write Config/UEPM.ini with [Package] section
+    // Write Config/UEPM.ini with [Plugin] section
     std::fs::create_dir_all(dir.join("Config")).unwrap();
     std::fs::write(dir.join("Config/UEPM.ini"), "").unwrap();
     write_package_metadata(dir, meta).unwrap();
@@ -180,13 +180,13 @@ async fn test_publish_without_token_returns_token_required() {
     );
 }
 
-// ── missing [Package] ─────────────────────────────────────────────────────────
+// ── missing [Plugin] ──────────────────────────────────────────────────────────
 
 #[tokio::test]
 async fn test_publish_without_package_section_returns_error() {
     let dir = tempdir().unwrap();
     std::fs::create_dir_all(dir.path().join("Config")).unwrap();
-    std::fs::write(dir.path().join("Config/UEPM.ini"), "[Plugins]\n").unwrap();
+    std::fs::write(dir.path().join("Config/UEPM.ini"), "[Dependencies]\n").unwrap();
 
     let ctx = UEPMContext::for_test(dir.path().to_path_buf(), "https://registry.npmjs.org", Some("tok".into()));
 

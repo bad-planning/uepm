@@ -122,17 +122,17 @@ pub async fn run_plugin_init(
         return Err(UepmError::InteractiveRequired);
     }
 
-    // Warn if [Package] already exists
+    // Warn if [Plugin] already exists
     if manifest_exists(plugin_dir) {
         if let Ok(m) = read_manifest(plugin_dir) {
             if m.package.is_some() && !yes {
                 let overwrite = Confirm::with_theme(&ColorfulTheme::default())
-                    .with_prompt("[Package] section already exists. Overwrite?")
+                    .with_prompt("[Plugin] section already exists. Overwrite?")
                     .default(false)
                     .interact()
                     .map_err(|e| UepmError::Io(std::io::Error::other(e.to_string())))?;
                 if !overwrite {
-                    crate::output::print_info("Aborted — [Package] section unchanged");
+                    crate::output::print_info("Aborted — [Plugin] section unchanged");
                     return Ok(());
                 }
             }
@@ -368,7 +368,7 @@ mod tests {
         std::fs::create_dir(dir.path().join("Config")).unwrap();
         std::fs::write(
             dir.path().join("Config/UEPM.ini"),
-            "[Plugins]\n\"@acme/existing\" = \"^1.0.0\"\n",
+            "[Dependencies]\n\"@acme/existing\" = \"^1.0.0\"\n",
         )
         .unwrap();
 
@@ -460,7 +460,7 @@ mod tests {
         std::fs::create_dir(dir.path().join("Config")).unwrap();
         std::fs::write(
             dir.path().join("Config/UEPM.ini"),
-            "[Plugins]\n\"@acme/dep\" = \"^1.0.0\"\n",
+            "[Dependencies]\n\"@acme/dep\" = \"^1.0.0\"\n",
         )
         .unwrap();
         write_uplugin(dir.path(), "MyPlugin", json!({

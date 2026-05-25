@@ -2,7 +2,7 @@
 name = "uepm"
 version = "2.0.0"
 edition = "2021"
-description = "Unreal Engine Package Manager"
+description = "Unreal Engine Plugin Manager"
 
 [[bin]]
 name = "uepm"

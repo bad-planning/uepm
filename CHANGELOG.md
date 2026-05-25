@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Renamed tool from "Unreal Engine Package Manager" to **Unreal Engine Plugin Manager**
+  (binary name `uepm` is unchanged)
+- `Config/UEPM.ini` section `[Package]` renamed to `[Plugin]` — describes the
+  plugin being published (name, version, author, etc.)
+- `Config/UEPM.ini` section `[Plugins]` renamed to `[Dependencies]` — lists
+  plugin dependencies in both project and plugin manifests
+
 ### Added
 
 - `uepm init` plugin context: detects `.uplugin` files and prompts for package
