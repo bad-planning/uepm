@@ -67,6 +67,9 @@ jobs:
           path: artifacts
           merge-multiple: true
 
+      - name: Copy install scripts
+        run: cp install.sh install.ps1 artifacts/
+
       - name: Stamp CHANGELOG
         if: ${{ !contains(github.ref_name, '-') }}
         run: |
