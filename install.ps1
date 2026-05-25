@@ -30,8 +30,12 @@ if ($CurrentPath -notlike "*uepm\bin*") {
     Write-Host "Added $InstallDir to user PATH"
 }
 
+# Also update the current session's PATH so uepm is usable immediately
+if ($env:PATH -notlike "*uepm\bin*") {
+    $env:PATH = "$env:PATH;$InstallDir"
+}
+
 Write-Host ""
 Write-Host "✓ uepm installed to $InstallDir\uepm.exe"
-Write-Host "  Restart your terminal to use uepm"
 Write-Host ""
 Write-Host "  Get started: uepm init"
