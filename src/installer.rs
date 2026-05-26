@@ -77,6 +77,22 @@ fn extract_tarball(data: &[u8], dest: &Path) -> Result<(), UepmError> {
         let mut entry = entry?;
         let entry_path = entry.path()?.to_path_buf();
 
+        // Reject absolute paths and any path that contains a `..` component —
+        // either would allow a malicious tarball to write outside `dest`.
+        if entry_path.is_absolute()
+            || entry_path
+                .components()
+                .any(|c| c == std::path::Component::ParentDir)
+        {
+            return Err(UepmError::Io(std::io::Error::new(
+                std::io::ErrorKind::PermissionDenied,
+                format!(
+                    "path traversal detected in tarball: {}",
+                    entry_path.display()
+                ),
+            )));
+        }
+
         let stripped = entry_path
             .strip_prefix("package")
             .unwrap_or(&entry_path);
@@ -265,6 +281,63 @@ mod tests {
 
         let result = symlink_local(Path::new("/nonexistent/path"), "@acme/test-plugin", &uepm_dir);
         assert!(result.is_err());
+    }
+
+    /// Build a minimal .tar.gz with one entry whose stored path is `entry_path`.
+    /// We write raw POSIX tar headers so we can embed paths the builder would reject.
+    fn make_raw_tarball_with_path(entry_path: &str, content: &[u8]) -> Vec<u8> {
+        use flate2::{write::GzEncoder, Compression};
+        use std::io::Write;
+
+        // A POSIX ustar header is 512 bytes
+        let mut header = [0u8; 512];
+        // Name field: bytes 0..100
+        let name_bytes = entry_path.as_bytes();
+        let name_len = name_bytes.len().min(99);
+        header[..name_len].copy_from_slice(&name_bytes[..name_len]);
+        // File mode: bytes 100..108 ("0000644\0")
+        header[100..108].copy_from_slice(b"0000644\0");
+        // UID / GID
+        header[108..116].copy_from_slice(b"0000000\0");
+        header[116..124].copy_from_slice(b"0000000\0");
+        // File size in octal, bytes 124..136
+        let size_str = format!("{:011o}\0", content.len());
+        header[124..136].copy_from_slice(size_str.as_bytes());
+        // mtime
+        header[136..148].copy_from_slice(b"00000000000\0");
+        // typeflag '0' = regular file
+        header[156] = b'0';
+        // magic "ustar  \0"
+        header[257..265].copy_from_slice(b"ustar  \0");
+        // Compute checksum (bytes 148..156 = spaces during calculation)
+        header[148..156].copy_from_slice(b"        ");
+        let cksum: u32 = header.iter().map(|&b| b as u32).sum();
+        let cksum_str = format!("{:06o}\0 ", cksum);
+        header[148..156].copy_from_slice(cksum_str.as_bytes());
+
+        // Pad content to 512-byte block
+        let padded_len = ((content.len() + 511) / 512) * 512;
+        let mut tar_bytes = Vec::new();
+        tar_bytes.extend_from_slice(&header);
+        tar_bytes.extend_from_slice(content);
+        tar_bytes.extend(std::iter::repeat(0u8).take(padded_len - content.len()));
+        // Two 512-byte zero blocks = end-of-archive
+        tar_bytes.extend([0u8; 1024]);
+
+        let mut gz = GzEncoder::new(Vec::new(), Compression::default());
+        gz.write_all(&tar_bytes).unwrap();
+        gz.finish().unwrap()
+    }
+
+    #[test]
+    fn test_extract_rejects_dotdot_path_traversal() {
+        let dest = tempdir().unwrap();
+        let tarball = make_raw_tarball_with_path("package/../../evil.sh", b"evil");
+        let result = extract_tarball(&tarball, dest.path());
+        assert!(
+            result.is_err(),
+            "tarball with .. path component must be rejected"
+        );
     }
 
     #[tokio::test]
