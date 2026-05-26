@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>UEPM — Unreal Engine Plugin Manager</title>
+  <meta name="description" content="A standalone CLI for managing Unreal Engine plugins via the npm registry. No Node.js required." />
+  <meta property="og:title" content="UEPM — Unreal Engine Plugin Manager" />
+  <meta property="og:description" content="A standalone CLI for managing Unreal Engine plugins via the npm registry. No Node.js required." />
+  <meta property="og:url" content="https://uepm.dev" />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #0c0c0e;
+      --bg-card:    #131316;
+      --bg-code:    #0a0a0c;
+      --border:     #222228;
+      --border-dim: #1a1a1f;
+      --accent:     #e8834a;
+      --accent-dim: rgba(232,131,74,0.12);
+      --accent-glow:rgba(232,131,74,0.25);
+      --text:       #e8e8ea;
+      --text-muted: #6b6b78;
+      --text-dim:   #9999a8;
+      --green:      #4ade80;
+      --blue:       #60a5fa;
+      --purple:     #a78bfa;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 2rem; height: 60px;
+      background: rgba(12,12,14,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-dim);
+    }
+
+    .nav-logo {
+      font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em;
+      color: var(--text); display: flex; align-items: center; gap: 0.5rem;
+    }
+    .nav-logo span { color: var(--accent); }
+
+    .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-links a { color: var(--text-dim); font-size: 0.875rem; font-weight: 500; transition: color 0.15s; }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+    .nav-gh {
+      display: flex; align-items: center; gap: 0.4rem;
+      background: var(--border); color: var(--text) !important;
+      padding: 0.35rem 0.85rem; border-radius: 6px;
+      font-size: 0.8rem; font-weight: 500;
+      transition: background 0.15s;
+    }
+    .nav-gh:hover { background: #2e2e38 !important; text-decoration: none !important; }
+    .nav-gh svg { flex-shrink: 0; }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 6rem 2rem 4rem;
+      position: relative; overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 500px;
+      background: radial-gradient(ellipse at center, rgba(232,131,74,0.09) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--accent-dim); border: 1px solid rgba(232,131,74,0.25);
+      color: var(--accent); font-size: 0.75rem; font-weight: 600;
+      padding: 0.35rem 0.9rem; border-radius: 99px; letter-spacing: 0.04em;
+      text-transform: uppercase; margin-bottom: 2rem;
+    }
+    .hero-badge-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .hero h1 {
+      font-size: clamp(3rem, 8vw, 5.5rem);
+      font-weight: 800; letter-spacing: -0.04em; line-height: 1;
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 .accent { color: var(--accent); }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--text-dim); max-width: 540px;
+      margin: 0 auto 3rem; line-height: 1.7;
+    }
+
+    /* ── INSTALL BOX ── */
+    .install-box {
+      display: inline-flex; flex-direction: column; gap: 0;
+      background: var(--bg-code); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+      min-width: min(520px, 90vw); text-align: left;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 0 0 1px rgba(232,131,74,0.06), 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .install-tab-bar {
+      display: flex; border-bottom: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    .install-tab {
+      padding: 0.6rem 1.2rem; font-size: 0.75rem; font-weight: 500;
+      color: var(--text-muted); cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+    .install-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .install-pane { display: none; padding: 1rem 1.25rem; }
+    .install-pane.active { display: flex; align-items: center; gap: 0.75rem; }
+
+    .install-prompt { color: var(--accent); font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+    .install-cmd {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+      color: var(--text); flex: 1; word-break: break-all;
+    }
+
+    .copy-btn {
+      flex-shrink: 0; background: none; border: 1px solid var(--border);
+      color: var(--text-muted); border-radius: 6px; cursor: pointer;
+      padding: 0.3rem 0.5rem; transition: all 0.15s;
+      font-size: 0.7rem; display: flex; align-items: center; gap: 0.3rem;
+    }
+    .copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+    .hero-links {
+      display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; justify-content: center;
+    }
+    .hero-links a { font-size: 0.875rem; color: var(--text-dim); }
+    .hero-links a:hover { color: var(--text); }
+
+    /* ── SECTION WRAPPER ── */
+    .section { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 0.75rem;
+    }
+    .section-title {
+      font-size: clamp(1.6rem, 4vw, 2.5rem); font-weight: 800;
+      letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 1rem;
+    }
+    .section-desc { color: var(--text-dim); max-width: 540px; font-size: 1rem; line-height: 1.7; }
+
+    /* ── FEATURES GRID ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1px; margin-top: 3.5rem;
+      background: var(--border-dim);
+      border: 1px solid var(--border-dim);
+      border-radius: 16px; overflow: hidden;
+    }
+    .feature-card {
+      background: var(--bg-card); padding: 2rem;
+      transition: background 0.2s;
+    }
+    .feature-card:hover { background: #16161b; }
+
+    .feature-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--accent-dim); display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; margin-bottom: 1.1rem;
+    }
+    .feature-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .feature-card p { font-size: 0.875rem; color: var(--text-dim); line-height: 1.65; }
+
+    /* ── QUICKSTART ── */
+    .quickstart { padding: 5rem 2rem; max-width: 1100px; margin: 0 auto; }
+
+    .qs-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 2.5rem;
+    }
+    .qs-tab {
+      padding: 0.65rem 1.4rem; font-size: 0.875rem; font-weight: 500;
+      color: var(--text-muted); cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s; user-select: none;
+    }
+    .qs-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+    .qs-pane { display: none; }
+    .qs-pane.active { display: block; }
+
+    .qs-steps { display: flex; flex-direction: column; gap: 1.5rem; }
+    .qs-step { display: flex; gap: 1.5rem; align-items: flex-start; }
+    .qs-step-num {
+      flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent-dim); border: 1px solid rgba(232,131,74,0.3);
+      color: var(--accent); font-size: 0.75rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; margin-top: 0.1rem;
+    }
+    .qs-step-body h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .qs-step-body p { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 0.6rem; }
+
+    /* ── CODE BLOCK ── */
+    .code-block {
+      background: var(--bg-code); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.25rem;
+      font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+      overflow-x: auto; line-height: 1.8;
+    }
+    .code-block .line { display: flex; gap: 0.5rem; }
+    .code-block .ps { color: var(--accent); user-select: none; }
+    .code-block .cm { color: var(--text-muted); font-style: italic; }
+    .code-block .kw { color: var(--blue); }
+    .code-block .str { color: var(--green); }
+
+    /* ── SEARCH / ECOSYSTEM ── */
+    .ecosystem {
+      padding: 5rem 2rem; max-width: 1100px; margin: 0 auto;
+    }
+
+    .search-bar-wrap {
+      margin-top: 2.5rem;
+      position: relative; max-width: 520px;
+    }
+    .search-bar-wrap svg {
+      position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); pointer-events: none;
+    }
+    #plugin-search {
+      width: 100%; padding: 0.85rem 1rem 0.85rem 2.75rem;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-size: 0.9rem;
+      font-family: inherit; outline: none; transition: border-color 0.15s;
+    }
+    #plugin-search::placeholder { color: var(--text-muted); }
+    #plugin-search:focus { border-color: var(--accent); }
+
+    .search-note { margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted); }
+    .search-note a { color: var(--accent); }
+
+    .plugin-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem; margin-top: 2rem;
+    }
+    .plugin-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1.25rem;
+      transition: border-color 0.15s, transform 0.15s;
+      cursor: default;
+    }
+    .plugin-card:hover { border-color: rgba(232,131,74,0.35); transform: translateY(-1px); }
+    .plugin-card-name { font-size: 0.875rem; font-weight: 600; color: var(--accent); margin-bottom: 0.3rem; }
+    .plugin-card-desc { font-size: 0.8rem; color: var(--text-dim); line-height: 1.5; margin-bottom: 0.75rem; }
+    .plugin-card-meta { display: flex; align-items: center; gap: 0.75rem; font-size: 0.7rem; color: var(--text-muted); }
+    .plugin-card-meta span { display: flex; align-items: center; gap: 0.25rem; }
+
+    #plugin-results-empty { display: none; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border-dim);
+      padding: 2.5rem 2rem; text-align: center;
+      font-size: 0.8rem; color: var(--text-muted);
+    }
+    footer a { color: var(--text-muted); }
+    footer a:hover { color: var(--text); }
+    .footer-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    .footer-links { display: flex; gap: 1.25rem; }
+
+    /* ── DIVIDER ── */
+    .divider { border: none; border-top: 1px solid var(--border-dim); margin: 0; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      nav { padding: 0 1rem; }
+      .nav-links .hide-sm { display: none; }
+      .hero { padding: 5rem 1.25rem 3rem; }
+      .section, .quickstart, .ecosystem { padding: 3.5rem 1.25rem; }
+      .qs-step { flex-direction: column; gap: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────── -->
+<nav>
+  <a href="/" class="nav-logo" style="text-decoration:none">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <rect width="20" height="20" rx="5" fill="#e8834a" fill-opacity="0.15"/>
+      <path d="M5 14V6l5 4 5-4v8" stroke="#e8834a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    uepm<span>.dev</span>
+  </a>
+  <div class="nav-links">
+    <a href="#quickstart" class="hide-sm">Quickstart</a>
+    <a href="#plugins" class="hide-sm">Plugins</a>
+    <a href="https://github.com/adamschlesinger/uepm/blob/main/README.md" target="_blank" class="hide-sm">Docs</a>
+    <a href="https://github.com/adamschlesinger/uepm" target="_blank" class="nav-gh">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ── HERO ──────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-badge">
+    <div class="hero-badge-dot"></div>
+    v2.0.0 Released
+  </div>
+
+  <h1>Plugin management<br/>for <span class="accent">Unreal Engine</span></h1>
+
+  <p class="hero-sub">
+    A standalone CLI that brings npm-style dependency management to Unreal Engine projects and plugins — no Node.js required.
+  </p>
+
+  <!-- Install tabs -->
+  <div class="install-box">
+    <div class="install-tab-bar">
+      <div class="install-tab active" data-tab="mac">macOS / Linux</div>
+      <div class="install-tab" data-tab="win">Windows</div>
+    </div>
+    <div class="install-pane active" id="pane-mac">
+      <span class="install-prompt">$</span>
+      <span class="install-cmd" id="cmd-mac">curl -fsSL https://uepm.dev/install.sh | sh</span>
+      <button class="copy-btn" onclick="copyCmd('cmd-mac', this)">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75A2.75 2.75 0 012.75 4h8.5A2.75 2.75 0 0114 6.75v8.5A2.75 2.75 0 0111.25 18h-8.5A2.75 2.75 0 010 15.25zm2.75-.25c-.69 0-1.25.56-1.25 1.25v8.5c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25v-8.5c0-.69-.56-1.25-1.25-1.25z"/><path d="M3.5 3.75a.75.75 0 01.75-.75h8.5A2.75 2.75 0 0115.5 5.75v8.5a.75.75 0 01-1.5 0v-8.5c0-.69-.56-1.25-1.25-1.25h-8.5a.75.75 0 01-.75-.75z"/></svg>
+        Copy
+      </button>
+    </div>
+    <div class="install-pane" id="pane-win">
+      <span class="install-prompt">PS&gt;</span>
+      <span class="install-cmd" id="cmd-win">irm https://uepm.dev/install.ps1 | iex</span>
+      <button class="copy-btn" onclick="copyCmd('cmd-win', this)">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75A2.75 2.75 0 012.75 4h8.5A2.75 2.75 0 0114 6.75v8.5A2.75 2.75 0 0111.25 18h-8.5A2.75 2.75 0 010 15.25zm2.75-.25c-.69 0-1.25.56-1.25 1.25v8.5c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25v-8.5c0-.69-.56-1.25-1.25-1.25z"/><path d="M3.5 3.75a.75.75 0 01.75-.75h8.5A2.75 2.75 0 0115.5 5.75v8.5a.75.75 0 01-1.5 0v-8.5c0-.69-.56-1.25-1.25-1.25h-8.5a.75.75 0 01-.75-.75z"/></svg>
+        Copy
+      </button>
+    </div>
+  </div>
+
+  <div class="hero-links">
+    <a href="#quickstart">→ Quickstart guide</a>
+    <a href="https://github.com/adamschlesinger/uepm/releases" target="_blank">Download binary</a>
+    <a href="https://github.com/adamschlesinger/uepm" target="_blank">View on GitHub</a>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ── FEATURES ──────────────────────────────────────────── -->
+<div class="section">
+  <div class="section-label">Why UEPM</div>
+  <h2 class="section-title">Everything you need,<br/>nothing you don't</h2>
+  <p class="section-desc">UEPM brings battle-tested package management workflows to the Unreal Engine ecosystem — built in Rust, ships as a single binary.</p>
+
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">📦</div>
+      <h3>npm registry — zero Node.js</h3>
+      <p>Publishes and installs from the npm registry using a native Rust HTTP client. No Node.js, no npm, no package.json on disk.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <h3>Reproducible installs</h3>
+      <p>Every install is pinned in <code style="font-size:0.78em;background:var(--bg-code);padding:1px 4px;border-radius:4px">uepm.lock</code> with verified SHA-512 checksums. Check it in; anyone who clones gets bit-identical plugins.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🌲</div>
+      <h3>Transitive dependencies</h3>
+      <p>Plugins can declare their own UEPM dependencies. UEPM resolves the full graph with conflict detection before touching the filesystem.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🚀</div>
+      <h3>Publish without npm</h3>
+      <p>Build the <code style="font-size:0.78em;background:var(--bg-code);padding:1px 4px;border-radius:4px">.tgz</code> tarball in memory, compute integrity, and PUT to the registry — all from a single <code style="font-size:0.78em;background:var(--bg-code);padding:1px 4px;border-radius:4px">uepm publish</code>.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <h3>Semver-aware</h3>
+      <p>Range syntax you already know — <code style="font-size:0.78em;background:var(--bg-code);padding:1px 4px;border-radius:4px">^1.2.0</code>, <code style="font-size:0.78em;background:var(--bg-code);padding:1px 4px;border-radius:4px">>=5.3.0</code>. Engine compatibility ranges are stored per plugin and checked on install.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Single binary, everywhere</h3>
+      <p>Ships as a static binary for macOS (arm64 + x86_64), Linux (x86_64), and Windows (x86_64). Drop it on CI and move on.</p>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ── QUICKSTART ─────────────────────────────────────────── -->
+<div class="quickstart" id="quickstart">
+  <div class="section-label">Quickstart</div>
+  <h2 class="section-title">Up in under a minute</h2>
+  <p class="section-desc">Whether you're adding plugins to an existing project or preparing your plugin for distribution, <code style="font-size:0.85em;background:var(--bg-code);padding:2px 6px;border-radius:4px">uepm init</code> has you covered.</p>
+
+  <div class="qs-tabs" style="margin-top:2.5rem">
+    <div class="qs-tab active" data-qs="consumer">Installing plugins</div>
+    <div class="qs-tab" data-qs="author">Publishing a plugin</div>
+  </div>
+
+  <!-- Consumer pane -->
+  <div class="qs-pane active" id="qs-consumer">
+    <div class="qs-steps">
+      <div class="qs-step">
+        <div class="qs-step-num">1</div>
+        <div class="qs-step-body">
+          <h4>Initialize your project</h4>
+          <p>Run inside the directory that contains your <code>.uproject</code> file. UEPM creates <code>Config/UEPM.ini</code>, the <code>UEPMPlugins/</code> directory, and wires everything into your <code>.uproject</code> automatically.</p>
+          <div class="code-block">
+            <div class="line"><span class="ps">$</span> cd YourUnrealProject</div>
+            <div class="line"><span class="ps">$</span> uepm init</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qs-step">
+        <div class="qs-step-num">2</div>
+        <div class="qs-step-body">
+          <h4>Install plugins</h4>
+          <p>Install by scoped name. UEPM resolves the version range, downloads the tarball, verifies its checksum, and extracts it into <code>UEPMPlugins/</code>.</p>
+          <div class="code-block">
+            <div class="line"><span class="ps">$</span> uepm install @acme/cool-plugin</div>
+            <div class="line"><span class="ps">$</span> uepm install @acme/utils@^2.0.0</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qs-step">
+        <div class="qs-step-num">3</div>
+        <div class="qs-step-body">
+          <h4>Check in the lock file</h4>
+          <p><code>uepm.lock</code> is machine-generated and should be committed. Teammates restore the exact same plugin versions with <code>uepm install</code> after cloning.</p>
+          <div class="code-block">
+            <div class="line"><span class="ps">$</span> git add Config/UEPM.ini uepm.lock</div>
+            <div class="line"><span class="ps">$</span> git commit -m "feat: add cool-plugin"</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qs-step">
+        <div class="qs-step-num">4</div>
+        <div class="qs-step-body">
+          <h4>Update or remove</h4>
+          <div class="code-block">
+            <div class="line"><span class="ps">$</span> uepm update               <span class="cm"># all plugins</span></div>
+            <div class="line"><span class="ps">$</span> uepm update @acme/utils   <span class="cm"># one plugin</span></div>
+            <div class="line"><span class="ps">$</span> uepm uninstall @acme/utils</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Author pane -->
+  <div class="qs-pane" id="qs-author">
+    <div class="qs-steps">
+      <div class="qs-step">
+        <div class="qs-step-num">1</div>
+        <div class="qs-step-body">
+          <h4>Initialize your plugin</h4>
+          <p>Run inside the directory that contains your <code>.uplugin</code> file. UEPM detects the plugin context and prompts you for publish metadata.</p>
+          <div class="code-block">
+            <div class="line"><span class="ps">$</span> cd YourPlugin</div>
+            <div class="line"><span class="ps">$</span> uepm init</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qs-step">
+        <div class="qs-step-num">2</div>
+        <div class="qs-step-body">
+          <h4>Review <code>Config/UEPM.ini</code></h4>
+          <p>The <code>[Plugin]</code> section controls what gets published. Set engine range and any transitive dependencies.</p>
+          <div class="code-block">
+            <div class="line"><span class="cm"># Config/UEPM.ini</span></div>
+            <div class="line"><span class="kw">[Plugin]</span></div>
+            <div class="line">Name        = <span class="str">"@your-scope/plugin-name"</span></div>
+            <div class="line">Version     = <span class="str">"1.0.0"</span></div>
+            <div class="line">EngineRange = <span class="str">">=5.3.0, &lt;6.0.0"</span></div>
+            <div class="line">License     = <span class="str">"MIT"</span></div>
+            <div class="line"></div>
+            <div class="line"><span class="kw">[Dependencies]</span></div>
+            <div class="line"><span class="str">"@acme/base-utils"</span> = <span class="str">"^2.0.0"</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="qs-step">
+        <div class="qs-step-num">3</div>
+        <div class="qs-step-body">
+          <h4>Publish</h4>
+          <p>UEPM builds the tarball in memory and PUTs it directly to the registry. Use <code>--dry-run</code> to inspect the file list without uploading.</p>
+          <div class="code-block">
+            <div class="line"><span class="ps">$</span> export UEPM_TOKEN=npm_xxxx</div>
+            <div class="line"><span class="ps">$</span> uepm publish --dry-run   <span class="cm"># validate first</span></div>
+            <div class="line"><span class="ps">$</span> uepm publish              <span class="cm"># interactive confirm + upload</span></div>
+            <div class="line"><span class="ps">$</span> uepm publish --tag beta   <span class="cm"># non-default dist-tag</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ── PLUGIN SEARCH ──────────────────────────────────────── -->
+<div class="ecosystem" id="plugins">
+  <div class="section-label">Ecosystem</div>
+  <h2 class="section-title">Discover plugins</h2>
+  <p class="section-desc">Browse plugins published to the npm registry with the <code style="font-size:0.85em;background:var(--bg-code);padding:2px 6px;border-radius:4px">uepm</code> keyword — or search npm directly.</p>
+
+  <div class="search-bar-wrap">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="6.5" cy="6.5" r="5"/>
+      <path d="M10.5 10.5l3.5 3.5" stroke-linecap="round"/>
+    </svg>
+    <input type="text" id="plugin-search" placeholder="Search plugins…" autocomplete="off" />
+  </div>
+  <p class="search-note">
+    Find more on <a href="https://www.npmjs.com/search?q=keywords:uepm" target="_blank">npmjs.com → keyword:uepm ↗</a>
+  </p>
+
+  <div class="plugin-grid" id="plugin-grid">
+    <!-- populated by JS -->
+  </div>
+  <p id="plugin-results-empty" style="margin-top:1.5rem;color:var(--text-muted);font-size:0.875rem">
+    No plugins found. Try searching <a href="https://www.npmjs.com/search?q=keywords:uepm" target="_blank">npmjs.com</a>.
+  </p>
+</div>
+
+<hr class="divider" />
+
+<!-- ── FOOTER ─────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <span>Built with ♥ for the Unreal community · MIT License</span>
+    <div class="footer-links">
+      <a href="https://github.com/adamschlesinger/uepm" target="_blank">GitHub</a>
+      <a href="https://github.com/adamschlesinger/uepm/releases" target="_blank">Releases</a>
+      <a href="https://github.com/adamschlesinger/uepm/blob/main/CHANGELOG.md" target="_blank">Changelog</a>
+      <a href="https://www.npmjs.com/search?q=keywords:uepm" target="_blank">npm</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ── Install tabs ──────────────────────────────────────────
+  document.querySelectorAll('.install-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const id = tab.dataset.tab;
+      document.querySelectorAll('.install-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.install-pane').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('pane-' + id).classList.add('active');
+    });
+  });
+
+  // ── Quickstart tabs ───────────────────────────────────────
+  document.querySelectorAll('.qs-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const id = tab.dataset.qs;
+      document.querySelectorAll('.qs-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.qs-pane').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('qs-' + id).classList.add('active');
+    });
+  });
+
+  // ── Copy command ──────────────────────────────────────────
+  function copyCmd(id, btn) {
+    const text = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.classList.add('copied');
+      btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/></svg> Copied!`;
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = `<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75A2.75 2.75 0 012.75 4h8.5A2.75 2.75 0 0114 6.75v8.5A2.75 2.75 0 0111.25 18h-8.5A2.75 2.75 0 010 15.25zm2.75-.25c-.69 0-1.25.56-1.25 1.25v8.5c0 .69.56 1.25 1.25 1.25h8.5c.69 0 1.25-.56 1.25-1.25v-8.5c0-.69-.56-1.25-1.25-1.25z"/><path d="M3.5 3.75a.75.75 0 01.75-.75h8.5A2.75 2.75 0 0115.5 5.75v8.5a.75.75 0 01-1.5 0v-8.5c0-.69-.56-1.25-1.25-1.25h-8.5a.75.75 0 01-.75-.75z"/></svg> Copy`;
+      }, 2000);
+    });
+  }
+
+  // ── Plugin search ─────────────────────────────────────────
+  // Fetches live from the npm search API using the "uepm" keyword.
+  // Falls back to an empty state with a link to npmjs.com.
+  const grid = document.getElementById('plugin-grid');
+  const empty = document.getElementById('plugin-results-empty');
+  let allPlugins = [];
+
+  function renderPlugins(list) {
+    grid.innerHTML = '';
+    if (!list.length) {
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+    list.forEach(pkg => {
+      const card = document.createElement('div');
+      card.className = 'plugin-card';
+      card.innerHTML = `
+        <div class="plugin-card-name">${escHtml(pkg.name)}</div>
+        <div class="plugin-card-desc">${escHtml(pkg.description || 'No description provided.')}</div>
+        <div class="plugin-card-meta">
+          <span>v${escHtml(pkg.version)}</span>
+          ${pkg.author ? `<span>· ${escHtml(typeof pkg.author === 'string' ? pkg.author : pkg.author.name || '')}</span>` : ''}
+        </div>
+      `;
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => window.open('https://www.npmjs.com/package/' + pkg.name, '_blank'));
+      grid.appendChild(card);
+    });
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  async function fetchPlugins() {
+    try {
+      const url = 'https://registry.npmjs.org/-/v1/search?text=keywords:uepm&size=50';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('fetch failed');
+      const data = await res.json();
+      allPlugins = (data.objects || []).map(o => ({
+        name: o.package.name,
+        version: o.package.version,
+        description: o.package.description,
+        author: o.package.author,
+      }));
+      renderPlugins(allPlugins);
+    } catch (e) {
+      // show empty with link
+      renderPlugins([]);
+    }
+  }
+
+  document.getElementById('plugin-search').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    if (!q) { renderPlugins(allPlugins); return; }
+    renderPlugins(allPlugins.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      (p.description || '').toLowerCase().includes(q)
+    ));
+  });
+
+  fetchPlugins();
+</script>
+</body>
+</html>
