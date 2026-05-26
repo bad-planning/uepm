@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-05-26
+
 v2.0.0 is a complete rewrite of UEPM in Rust. The binary is fully self-contained —
 no Node.js runtime is required for plugin consumers or authors. All registry
 communication is handled directly over HTTPS using the npm registry protocol.
@@ -124,6 +126,7 @@ communication is handled directly over HTTPS using the npm registry protocol.
 - Initial release. Node.js-based CLI with `uepm init`, npm registry install via
   `postinstall` hook, `.uproject` modification, and VCS detection
 
-[Unreleased]: https://github.com/adamschlesinger/uepm/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/adamschlesinger/uepm/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/adamschlesinger/uepm/compare/v2.0.0...v2.0.0
 [1.1.0]: https://github.com/adamschlesinger/uepm/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/adamschlesinger/uepm/releases/tag/v1.0.0
