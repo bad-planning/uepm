@@ -76,6 +76,10 @@ install.ps1                       — Windows install script (irm | iex)
 - `tests/install_integration.rs` is the integration test — uses `mockito::Server` for a fake npm registry and `tempfile::tempdir` for isolation
 - `UEPM_REGISTRY` env var overrides the registry URL in tests
 
+## Roadmap
+
+Feature planning lives in `ROADMAP.md`. Before adding new features or answering questions about what is or isn't supported, check the roadmap to see if it's already planned and in which phase.
+
 ## Before Every Commit
 
 Re-evaluate whether the README needs updating to reflect the changes being committed — especially the Commands table, Project files section, and any env var or install flow changes.
